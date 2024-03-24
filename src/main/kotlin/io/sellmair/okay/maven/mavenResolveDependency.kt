@@ -1,16 +1,22 @@
 package io.sellmair.okay.maven
 
 import io.sellmair.okay.*
+import kotlinx.coroutines.runBlocking
 import java.net.URI
 import java.nio.file.Path
-import kotlin.io.path.Path
 import kotlin.io.path.createParentDirectories
 import kotlin.io.path.outputStream
 
 fun OkContext.mavenResolveDependency(
-    group: String, artifact: String, version: String
+    outputDirectory: Path,
+    mavenCoordinates: MavenCoordinates,
 ): OkAsync<Path> {
-    val outputFile = Path("in/libs/$group-$artifact-$version.jar")
+    val group = mavenCoordinates.group
+    val artifact = mavenCoordinates.artifact
+    val version = mavenCoordinates.version
+
+    runBlocking {  }
+    val outputFile = outputDirectory.resolve("$group-$artifact-$version.jar")
 
     return cached(
         "resolve: '$group:$artifact:$version'",
@@ -22,8 +28,8 @@ fun OkContext.mavenResolveDependency(
         output = listOf(OkOutputFile(outputFile))
     ) {
         log("Downloading $artifact:$version")
-        val resultPath = Path("in/libs/$group-$artifact-$version.jar")
-        resultPath.createParentDirectories()
+
+        outputFile.createParentDirectories()
 
         val urlString = buildString {
             append("https://repo1.maven.org/maven2/") // repo
@@ -34,7 +40,7 @@ fun OkContext.mavenResolveDependency(
         }
 
         URI.create(urlString).toURL().openStream()
-            .copyTo(resultPath.outputStream())
+            .copyTo(outputFile.outputStream())
 
         outputFile
     }

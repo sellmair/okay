@@ -8,9 +8,12 @@ import java.io.ObjectOutputStream
 import java.nio.file.Path
 import kotlin.io.path.*
 
+private val cacheDirectory = Path(".okay/cache")
+private val cacheEntriesDirectory = cacheDirectory.resolve("entry")
+private val cacheBlobsDirectory = cacheDirectory.resolve("blobs")
 
 fun readCacheEntry(key: OkHash): OkCacheEntry<*>? {
-    val file = Path("cache/entry/$key")
+    val file = cacheEntriesDirectory.resolve(key.value)
     if (!file.isRegularFile()) return null
 
     return ObjectInputStream(file.inputStream().buffered()).use { stream ->
@@ -19,10 +22,9 @@ fun readCacheEntry(key: OkHash): OkCacheEntry<*>? {
 }
 
 private fun writeCacheEntry(key: OkHash, value: OkCacheEntry<*>): Path {
-    val base = Path("cache/entry")
-    base.createDirectories()
+    cacheEntriesDirectory.createDirectories()
 
-    val file = base.resolve(key.value)
+    val file = cacheEntriesDirectory.resolve(key.value)
     ObjectOutputStream(file.outputStream().buffered()).use { stream ->
         stream.writeObject(value)
     }
@@ -30,10 +32,8 @@ private fun writeCacheEntry(key: OkHash, value: OkCacheEntry<*>): Path {
     return file
 }
 
-
 suspend fun <T> storeCache(inputHash: OkHash, value: T, output: OkOutput): Path {
-    val base = Path("cache/blob")
-    base.createDirectories()
+    cacheBlobsDirectory.createDirectories()
 
     return withContext(Dispatchers.IO) {
         val files = output.walkFiles()
@@ -42,7 +42,7 @@ suspend fun <T> storeCache(inputHash: OkHash, value: T, output: OkOutput): Path 
                 async {
                     if (!path.exists() || !path.isRegularFile()) return@async null
                     val key = path.regularFileCacheKey()
-                    val blobFile = base.resolve(key.value)
+                    val blobFile = cacheBlobsDirectory.resolve(key.value)
                     path.copyTo(blobFile, true)
                     path to key
                 }
@@ -66,7 +66,7 @@ suspend fun restoreFilesFromCache(entry: OkCacheEntry<*>) {
     withContext(Dispatchers.IO) {
         entry.files.map { (path, hash) ->
             async {
-                val blob = Path("cache/blob/$hash")
+                val blob = cacheBlobsDirectory.resolve(hash.value)
                 if (blob.isRegularFile()) {
                     blob.copyTo(path, true)
                 }
@@ -91,7 +91,6 @@ fun OkOutput.cacheKey(): OkHash {
         is OkOutputFile -> path.regularFileCacheKey()
     }
 }
-
 
 private fun Path.directoryCacheKey(): OkHash {
     return hash {

@@ -1,3 +1,5 @@
+import kotlin.io.path.Path
+
 plugins {
     //kotlin("jvm") version "2.0.0-Beta5"
     kotlin("jvm") version "1.9.21"
@@ -28,10 +30,15 @@ tasks.register<Jar>("packageExecutable") {
     }
 }
 
-
 tasks.register("package") {
     dependsOn("packageLibraries")
     dependsOn("packageExecutable")
+}
+
+tasks.register<Sync>("install") {
+    dependsOn("package")
+    from(layout.buildDirectory.dir("executable"))
+    into(Path(System.getProperty("user.home")).resolve(".okay").resolve("bin"))
 }
 
 dependencies {

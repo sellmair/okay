@@ -57,19 +57,18 @@ data class OkContextImpl(
 
         /* No cache hit: Let's start the operation! */
         val asyncResult = scope.async {
-            runCatching {
+            val result = runCatching {
                 body()
             }
-        }
 
-        /* In case of the operation being successful: Store it to the persistent cache */
-        scope.launch {
-            val result = asyncResult.await()
+            /* In case of the operation being successful: Store it to the persistent cache */
             if (result.isSuccess) {
                 log("Storing cache...")
                 storeCache(cacheKey, result.getOrThrow(), output)
                 log("Stored cache")
             }
+
+            result
         }
 
         return OkAsyncImpl(scope.async {
