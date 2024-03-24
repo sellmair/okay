@@ -1,0 +1,46 @@
+plugins {
+    //kotlin("jvm") version "2.0.0-Beta5"
+    kotlin("jvm") version "1.9.21"
+}
+
+repositories {
+    mavenCentral()
+}
+
+
+tasks.register<Sync>("packageLibraries") {
+    from(project.configurations.getByName(kotlin.target.compilations["main"].runtimeDependencyConfigurationName))
+    into(layout.buildDirectory.dir("executable/libs"))
+}
+
+tasks.register<Jar>("packageExecutable") {
+    dependsOn("packageLibraries")
+
+    from(kotlin.target.compilations["main"].output.allOutputs)
+    destinationDirectory = layout.buildDirectory.dir("executable")
+
+    manifest {
+        attributes["Main-Class"] = "io.sellmair.okay.OkMain"
+        attributes["Class-Path"] = project.provider {
+            layout.buildDirectory.dir("executable/libs").get().asFile.listFiles().orEmpty()
+                .joinToString(" ") { it.relativeTo(destinationDirectory.asFile.get()).path }
+        }
+    }
+}
+
+
+tasks.register("package") {
+    dependsOn("packageLibraries")
+    dependsOn("packageExecutable")
+}
+
+dependencies {
+    implementation("org.jetbrains.kotlin:kotlin-compiler-embeddable:1.9.23")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
+    testImplementation(platform("org.junit:junit-bom:5.10.0"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+}
+
+tasks.test {
+    useJUnitPlatform()
+}
