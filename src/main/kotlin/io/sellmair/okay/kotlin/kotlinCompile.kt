@@ -12,7 +12,7 @@ import org.jetbrains.kotlin.incremental.destinationAsFile
 import java.nio.file.Path
 import kotlin.io.path.*
 
-suspend fun OkBuildContext.kotlinCompile(): OkAsync<Path> {
+suspend fun OkContext.kotlinCompile(): OkAsync<Path> {
     val mainSourcesDir = Path("src")
     val kotlinSources = mainSourcesDir.walk().filter { it.extension == "kt" }.toList()
 
@@ -24,7 +24,7 @@ suspend fun OkBuildContext.kotlinCompile(): OkAsync<Path> {
     return kotlinCompile(kotlinSources, dependencies, Path("out/main"))
 }
 
-fun OkBuildContext.kotlinCompile(
+fun OkContext.kotlinCompile(
     sources: List<Path>,
     dependencies: List<Path>,
     outputDirectory: Path

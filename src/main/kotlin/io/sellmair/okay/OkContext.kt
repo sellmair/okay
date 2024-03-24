@@ -1,19 +1,19 @@
 package io.sellmair.okay
 
-interface OkBuildContext {
+interface OkContext {
 
     fun log(value: String)
 
     fun <T> cached(
-        title: String, input: OkInput, output: OkOutput, body: suspend OkBuildContext.() -> T
+        title: String, input: OkInput, output: OkOutput, body: suspend OkContext.() -> T
     ): OkAsync<T>
 }
 
-fun <T> OkBuildContext.cached(
+fun <T> OkContext.cached(
     title: String,
     input: List<OkInput>,
     output: List<OkOutput>,
-    body: suspend OkBuildContext.() -> T
+    body: suspend OkContext.() -> T
 ): OkAsync<T> {
     return cached(title, OkCompositeInput(input), OkCompositeOutput(output), body)
 }

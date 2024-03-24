@@ -8,7 +8,7 @@ import kotlinx.coroutines.runBlocking
 
 fun main() {
     runBlocking(Dispatchers.Default) {
-        with(OkBuildContextImpl(this)) {
+        with(OkContextImpl(this)) {
             kotlinCompile().await()
         }
     }

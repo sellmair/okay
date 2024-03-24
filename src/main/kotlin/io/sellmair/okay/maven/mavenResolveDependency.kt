@@ -7,7 +7,7 @@ import kotlin.io.path.Path
 import kotlin.io.path.createParentDirectories
 import kotlin.io.path.outputStream
 
-fun OkBuildContext.mavenResolveDependency(
+fun OkContext.mavenResolveDependency(
     group: String, artifact: String, version: String
 ): OkAsync<Path> {
     val outputFile = Path("in/libs/$group-$artifact-$version.jar")
