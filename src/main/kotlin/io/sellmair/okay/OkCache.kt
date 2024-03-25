@@ -1,6 +1,9 @@
+@file:OptIn(ExperimentalPathApi::class)
+
 package io.sellmair.okay
 
 import io.sellmair.okay.io.toOk
+import io.sellmair.okay.utils.withClosure
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
@@ -77,10 +80,15 @@ suspend fun <T> storeCache(
 
 suspend fun restoreFilesFromCache(entry: OkCacheEntry<*>) {
     withContext(Dispatchers.IO) {
+        entry.output.withClosure { output -> if (output is OkCompositeOutput) output.values else emptyList() }
+            .filterIsInstance<OkOutputDirectory>()
+            .forEach { outputDirectory -> outputDirectory.path.toPath().deleteRecursively() }
+
         entry.files.map { (path, hash) ->
             async {
                 val blob = cacheBlobsDirectory.resolve(hash.value)
                 if (blob.isRegularFile()) {
+                    path.toPath().createParentDirectories()
                     blob.copyTo(path.toPath(), true)
                 }
             }

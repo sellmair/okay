@@ -35,6 +35,7 @@ fun OkContext.kotlinCompile(
     ) {
         log("Compiling Kotlin")
 
+        outputDirectory.deleteRecursively()
         outputDirectory.createDirectories()
 
         val args = K2JVMCompilerArguments()

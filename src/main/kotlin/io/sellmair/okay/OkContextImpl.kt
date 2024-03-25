@@ -48,6 +48,7 @@ data class OkContextImpl(
         } as OkAsync<T>
     }
 
+
     private fun <T> createNewAsync(
         title: String, input: OkInput, output: OkOutput, body: suspend OkContext.() -> T
     ): OkAsync<T> {
@@ -55,7 +56,7 @@ data class OkContextImpl(
 
         val deferred = cs.async {
             val inputKey = input.cacheKey()
-            when (val cacheResult = tryRestoreCache<T>(input, inputKey)) {
+            when (val cacheResult = tryRestoreCacheUnchecked<T>(inputKey)) {
                 is CacheHit -> cacheResult.entry
                 is CacheMiss -> {
                     val binder = OkAsyncBinder()
@@ -71,41 +72,52 @@ data class OkContextImpl(
         return OkDeferred(deferred)
     }
 
-    private suspend fun <T> tryRestoreCache(
-        input: OkInput, cacheKey: OkHash = input.cacheKey()
-    ): CacheResult<T> {
+    /**
+     * The input from the cache entry is not further validated.
+     * This is safe to be called if the [cacheKey] was recently created from the current input
+     */
+    private suspend fun <T> tryRestoreCacheUnchecked(cacheKey: OkHash): CacheResult<T> {
         val cacheEntry = readCacheEntry(cacheKey) ?: run {
             log("Cache Miss ($cacheKey): Missing")
-            return CacheMiss(cacheKey)
-        }
-
-        /* Launch & await restore of dependencies */
-        cacheEntry.dependencies.map { dependencyCacheKey ->
-            tryRestoreCache(dependencyCacheKey) ?: run {
-                return CacheMiss(cacheKey)
-            }
-        }
-
-        val outputCacheKey = cacheEntry.output.cacheKey()
-        if (outputCacheKey == cacheEntry.outputHash) {
-            log("UP-TO-DATE ($cacheKey) -> ($outputCacheKey)")
-        } else {
-            restoreFilesFromCache(cacheEntry)
-            log("Cache Restored ($cacheKey) -> ($outputCacheKey)")
+            return CacheMiss
         }
 
         @Suppress("UNCHECKED_CAST")
-        return CacheHit(cacheEntry as OkCacheEntry<T>)
+        return tryRestoreCache(cacheEntry as OkCacheEntry<T>)
     }
 
-    private suspend fun tryRestoreCache(cacheKey: OkHash): CacheResult<*>? {
+    /**
+     * Will only restore the cache from the key, if the inputs were unchanged.
+     */
+    private suspend fun tryRestoreCacheChecked(cacheKey: OkHash): CacheResult<*>? {
         val entry = readCacheEntry(cacheKey) ?: return null
         val inputState = entry.input.cacheKey()
         if (inputState != cacheKey) {
             log("Cache miss: '${entry.title}. Expected: ($cacheKey), found: ($inputState)")
             return null
         }
-        return tryRestoreCache<Any?>(entry.input, cacheKey)
+        return tryRestoreCache(entry)
+    }
+
+    private suspend fun <T> tryRestoreCache(
+        cacheEntry: OkCacheEntry<T>
+    ): CacheResult<T> {
+        /* Launch & await restore of dependencies */
+        cacheEntry.dependencies.map { dependencyCacheKey ->
+            tryRestoreCacheChecked(dependencyCacheKey) ?: run {
+                return CacheMiss
+            }
+        }
+
+        val outputCacheKey = cacheEntry.output.cacheKey()
+        if (outputCacheKey == cacheEntry.outputHash) {
+            log("UP-TO-DATE (${cacheEntry.key}) -> ($outputCacheKey)")
+        } else {
+            restoreFilesFromCache(cacheEntry)
+            log("Cache Restored (${cacheEntry.key}) -> ($outputCacheKey)")
+        }
+
+        return CacheHit(cacheEntry)
     }
 
     private class OkAsyncBinder : CoroutineContext.Element {
@@ -138,6 +150,5 @@ data class OkContextImpl(
 
 
 sealed class CacheResult<out T>
-
 data class CacheHit<T>(val entry: OkCacheEntry<T>) : CacheResult<T>()
-data class CacheMiss(val key: OkHash) : CacheResult<Nothing>()
+data object CacheMiss : CacheResult<Nothing>()
