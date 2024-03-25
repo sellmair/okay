@@ -3,8 +3,6 @@
 package io.sellmair.okay
 
 import io.sellmair.okay.kotlin.kotlinCompile
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.Path
 import kotlin.io.path.deleteRecursively
@@ -22,19 +20,19 @@ fun main(args: Array<String>) {
     """.trimMargin()
     )
 
-    runBlocking(Dispatchers.Default) {
-        with(OkContextImpl(this)) {
-            if (args.singleOrNull() == "build") {
-                kotlinCompile().await()
-            }
+    runOkay {
+        if (args.singleOrNull() == "build") {
+            kotlinCompile().await()
 
-            if (args.singleOrNull() == "clean") {
-                log("Cleaning .okay")
-                Path(".okay").deleteRecursively()
+        }
 
-                log("Cleaning build")
-                Path("build").deleteRecursively()
-            }
+        if (args.singleOrNull() == "clean") {
+            log("Cleaning .okay")
+            Path(".okay").deleteRecursively()
+
+            log("Cleaning build")
+            Path("build").deleteRecursively()
         }
     }
+
 }

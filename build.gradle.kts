@@ -1,8 +1,13 @@
+import org.jetbrains.kotlin.cli.js.internal.main
 import kotlin.io.path.Path
 
 plugins {
     //kotlin("jvm") version "2.0.0-Beta5"
     kotlin("jvm") version "1.9.21"
+}
+
+kotlin {
+    jvmToolchain(17)
 }
 
 repositories {
@@ -39,6 +44,14 @@ tasks.register<Sync>("install") {
     dependsOn("package")
     from(layout.buildDirectory.dir("executable"))
     into(Path(System.getProperty("user.home")).resolve(".okay").resolve("bin"))
+}
+
+tasks.register<JavaExec>("buildTestProject") {
+    dependsOn("install")
+    workingDir = file("testProject")
+    classpath = kotlin.target.compilations["main"].runtimeDependencyFiles
+    args = listOf("build")
+    mainClass = "io.sellmair.okay.OkMain"
 }
 
 dependencies {

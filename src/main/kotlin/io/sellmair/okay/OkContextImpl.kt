@@ -1,86 +1,143 @@
 package io.sellmair.okay
 
 import kotlinx.coroutines.*
-import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
+import kotlin.coroutines.CoroutineContext
+
+fun runOkay(block: suspend OkContext.() -> Unit) {
+    val context = OkContextImpl(CoroutineScope(SupervisorJob() + Dispatchers.Default))
+    context.runBlocking(block)
+}
 
 data class OkContextImpl(
-    private val scope: CoroutineScope,
-    private val paths: List<String> = emptyList(),
-    private val values: ConcurrentHashMap<OkInput, OkAsync<*>> = ConcurrentHashMap<OkInput, OkAsync<*>>()
+    private val cs: CoroutineScope,
+    override val stack: List<String> = emptyList(),
+    private val values: HashMap<OkInput, OkAsync<*>> = HashMap(),
+    private val cacheRestores: HashMap<OkInput, OkAsync<*>> = HashMap()
 ) : OkContext {
 
-    override fun log(value: String) {
-        println("[${paths.joinToString("/")}]: $value")
+    fun runBlocking(block: suspend OkContextImpl.() -> Unit) {
+        runBlocking(cs.coroutineContext + OkAsyncBinder()) {
+            block()
+        }
     }
 
-    override fun <T> cached(
+    private val lock = ReentrantLock()
+
+    override fun log(value: String) {
+        println("[${stack.joinToString("/")}]: $value")
+    }
+
+    override fun <T> launchTask(
         title: String,
         input: OkInput,
         output: OkOutput,
         body: suspend OkContext.() -> T
     ): OkAsync<T> {
         @Suppress("UNCHECKED_CAST")
-        return values.computeIfAbsent(input) compute@{
-            with(copy(paths = paths + title)) {
-                createNewAsync(input, output, body)
+        return lock.withLock {
+            values.getOrPut(input) new@{
+                val newCtx = copy(
+                    stack = stack + title,
+                    cs = CoroutineScope(cs.coroutineContext + Job())
+                )
+
+                newCtx.createNewAsync(title, input, output, body)
             }
         } as OkAsync<T>
     }
 
     private fun <T> createNewAsync(
-        input: OkInput, output: OkOutput, body: suspend OkContext.() -> T
+        title: String, input: OkInput, output: OkOutput, body: suspend OkContext.() -> T
     ): OkAsync<T> {
-        /* Hash all inputs to get a key for the calculation */
-        val cacheKey = input.cacheKey()
+        log("requested '$title'")
 
-        /* Load the cache entry for the given cache key which might be available on disk */
-        val cacheEntry = readCacheEntry(cacheKey)
-        if (cacheEntry == null) {
-            log("Missing cache entry for ${cacheKey.value.take(6)}")
-        }
-
-        if (cacheEntry != null) {
-            /* If the outputs are still OK from the previously stored calculation, then we can re-use the cache entry */
-            log("Checking cache ${cacheKey.value.take(6)}")
-            if (output.cacheKey() == cacheEntry.outputHash) {
-                log("UP-TO-DATE (${cacheEntry.outputHash.value.take(6)})")
-                return OkAsyncImpl(scope.async {
-                    restoreFilesFromCache(cacheEntry)
-                    @Suppress("UNCHECKED_CAST")
-                    cacheEntry.value as T
-                })
-
-            } else {
-                log("Cache Miss: Expected ${output.cacheKey()}, found: ${cacheEntry.outputHash}")
+        val deferred = cs.async {
+            val inputKey = input.cacheKey()
+            when (val cacheResult = tryRestoreCache<T>(input, inputKey)) {
+                is CacheHit -> cacheResult.entry
+                is CacheMiss -> {
+                    val binder = OkAsyncBinder()
+                    withContext(binder) {
+                        val result = body()
+                        log("Storing cache ($inputKey)")
+                        storeCache(inputKey, result, title, input, output, binder.dependencies.map { it.key })
+                    }
+                }
             }
         }
 
-        /* No cache hit: Let's start the operation! */
-        val asyncResult = scope.async {
-            val result = runCatching {
-                body()
-            }
+        return OkDeferred(deferred)
+    }
 
-            /* In case of the operation being successful: Store it to the persistent cache */
-            if (result.isSuccess) {
-                log("Storing cache...")
-                storeCache(cacheKey, result.getOrThrow(), output)
-                log("Stored cache")
-            }
-
-            result
+    private suspend fun <T> tryRestoreCache(
+        input: OkInput, cacheKey: OkHash = input.cacheKey()
+    ): CacheResult<T> {
+        val cacheEntry = readCacheEntry(cacheKey) ?: run {
+            log("Cache Miss ($cacheKey): Missing")
+            return CacheMiss(cacheKey)
         }
 
-        return OkAsyncImpl(scope.async {
-            asyncResult.await().getOrThrow()
-        })
+        /* Launch & await restore of dependencies */
+        cacheEntry.dependencies.map { dependencyCacheKey ->
+            tryRestoreCache(dependencyCacheKey) ?: run {
+                return CacheMiss(cacheKey)
+            }
+        }
+
+        val outputCacheKey = cacheEntry.output.cacheKey()
+        if (outputCacheKey == cacheEntry.outputHash) {
+            log("UP-TO-DATE ($cacheKey) -> ($outputCacheKey)")
+        } else {
+            restoreFilesFromCache(cacheEntry)
+            log("Cache Restored ($cacheKey) -> ($outputCacheKey)")
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        return CacheHit(cacheEntry as OkCacheEntry<T>)
+    }
+
+    private suspend fun tryRestoreCache(cacheKey: OkHash): CacheResult<*>? {
+        val entry = readCacheEntry(cacheKey) ?: return null
+        val inputState = entry.input.cacheKey()
+        if (inputState != cacheKey) {
+            log("Cache miss: '${entry.title}. Expected: ($cacheKey), found: ($inputState)")
+            return null
+        }
+        return tryRestoreCache<Any?>(entry.input, cacheKey)
+    }
+
+    private class OkAsyncBinder : CoroutineContext.Element {
+        val dependencies = mutableListOf<OkCacheEntry<*>>()
+        override val key: CoroutineContext.Key<*> = Key
+
+        companion object Key : CoroutineContext.Key<OkAsyncBinder>
+    }
+
+    override suspend fun <T> await0(async: OkAsync<T>): T {
+        if (async !is OkBindableAsync<T>) error("Expected '$async' to be bindable")
+        val binder = currentCoroutineContext()[OkAsyncBinder] ?: error("Missing 'OkAsyncBinder'")
+        val cacheEntry = async.await()
+        binder.dependencies.add(cacheEntry)
+        return cacheEntry.value
+    }
+
+    interface OkBindableAsync<T> : OkAsync<T> {
+        suspend fun await(): OkCacheEntry<T>
+    }
+
+    private class OkDeferred<T>(
+        val deferred: Deferred<OkCacheEntry<T>>
+    ) : OkBindableAsync<T> {
+        override suspend fun await(): OkCacheEntry<T> {
+            return deferred.await()
+        }
     }
 }
 
-private class OkAsyncImpl<T>(
-    private val deferred: Deferred<T>,
-) : OkAsync<T> {
-    override suspend fun await(): T {
-        return deferred.await()
-    }
-}
+
+sealed class CacheResult<out T>
+
+data class CacheHit<T>(val entry: OkCacheEntry<T>) : CacheResult<T>()
+data class CacheMiss(val key: OkHash) : CacheResult<Nothing>()

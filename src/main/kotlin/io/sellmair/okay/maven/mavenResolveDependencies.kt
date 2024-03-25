@@ -1,18 +1,14 @@
 package io.sellmair.okay.maven
 
-import io.sellmair.okay.OkAsync
-import io.sellmair.okay.OkContext
-import io.sellmair.okay.OkFileInput
-import io.sellmair.okay.OkOutputDirectory
-import io.sellmair.okay.io.OkLightPath
-import io.sellmair.okay.io.okLight
+import io.sellmair.okay.*
+import io.sellmair.okay.io.OkPath
 import kotlin.io.path.Path
 import kotlin.io.path.readText
 
-fun OkContext.mavenResolveDependencies(): OkAsync<List<OkLightPath>> {
+fun OkContext.mavenResolveDependencies(): OkAsync<List<OkPath>> {
     val configurationFile = Path("okay")
     val mavenLibrariesDirectory = Path(".okay/libs/maven")
-    return cached(
+    return launchTask(
         "resolve maven dependencies",
         input = OkFileInput(configurationFile),
         output = OkOutputDirectory(mavenLibrariesDirectory)
@@ -24,7 +20,7 @@ fun OkContext.mavenResolveDependencies(): OkAsync<List<OkLightPath>> {
             mavenResolveDependency(mavenLibrariesDirectory, coordinates)
         }.map { it.await() }
 
-        resolvedDependencies.map { path -> path.okLight() }
+        resolvedDependencies
     }
 }
 

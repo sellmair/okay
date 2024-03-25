@@ -11,8 +11,9 @@ fun OkHash(hash: ByteArray): OkHash {
 }
 
 data class OkHash(val value: String) : Serializable {
+
     override fun toString(): String {
-        return value
+        return value.take(6)
     }
 }
 

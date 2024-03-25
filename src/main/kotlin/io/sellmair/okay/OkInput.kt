@@ -1,10 +1,15 @@
 package io.sellmair.okay
 
+import io.sellmair.okay.io.OkPath
+import io.sellmair.okay.io.toOk
+import java.io.Serializable
 import java.nio.file.Path
 
-sealed class OkInput
+sealed class OkInput: Serializable
 
-data class OkFileInput(val path: Path) : OkInput()
+data class OkFileInput(val path: OkPath) : OkInput() {
+    constructor(path: Path) : this(path.toOk())
+}
 
 data class OkStringInput(val value: String) : OkInput()
 

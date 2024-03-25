@@ -1,5 +1,6 @@
 package io.sellmair.okay
 
+import io.sellmair.okay.io.toOk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
@@ -32,33 +33,45 @@ private fun writeCacheEntry(key: OkHash, value: OkCacheEntry<*>): Path {
     return file
 }
 
-suspend fun <T> storeCache(inputHash: OkHash, value: T, output: OkOutput): Path {
+suspend fun <T> storeCache(
+    key: OkHash,
+    value: T,
+    title: String,
+    input: OkInput,
+    output: OkOutput,
+    dependencies: List<OkHash>
+): OkCacheEntry<T> {
     cacheBlobsDirectory.createDirectories()
-
     return withContext(Dispatchers.IO) {
+        val outputHash = async { output.cacheKey() }
+
         val files = output.walkFiles()
             .toList()
             .map { path ->
                 async {
                     if (!path.exists() || !path.isRegularFile()) return@async null
-                    val key = path.regularFileCacheKey()
-                    val blobFile = cacheBlobsDirectory.resolve(key.value)
+                    val fileCacheKey = path.regularFileCacheKey()
+                    val blobFile = cacheBlobsDirectory.resolve(fileCacheKey.value)
                     path.copyTo(blobFile, true)
-                    path to key
+                    path.toOk() to fileCacheKey
                 }
             }
             .mapNotNull { it.await() }
             .toMap()
 
-        val entryHash = output.cacheKey()
-
         val entry = OkCacheEntry(
+            key = key,
             value = value,
-            outputHash = entryHash,
+            title = title,
+            input = input,
+            output = output,
+            outputHash = outputHash.await(),
+            dependencies = dependencies,
             files = files
         )
 
-        writeCacheEntry(inputHash, entry)
+        writeCacheEntry(key, entry)
+        entry
     }
 }
 
@@ -68,7 +81,7 @@ suspend fun restoreFilesFromCache(entry: OkCacheEntry<*>) {
             async {
                 val blob = cacheBlobsDirectory.resolve(hash.value)
                 if (blob.isRegularFile()) {
-                    blob.copyTo(path, true)
+                    blob.copyTo(path.toPath(), true)
                 }
             }
         }.map { it.await() }
@@ -79,7 +92,7 @@ fun OkInput.cacheKey(): OkHash {
     return when (this) {
         is OkCompositeInput -> hash(values.map { it.cacheKey() })
         is OkStringInput -> hash(value)
-        is OkFileInput -> path.regularFileCacheKey()
+        is OkFileInput -> path.toPath().regularFileCacheKey()
     }
 }
 
@@ -87,8 +100,8 @@ fun OkOutput.cacheKey(): OkHash {
     return when (this) {
         is OkCompositeOutput -> hash(values.map { it.cacheKey() })
         is OkEmptyOutput -> hash("")
-        is OkOutputDirectory -> path.directoryCacheKey()
-        is OkOutputFile -> path.regularFileCacheKey()
+        is OkOutputDirectory -> path.toPath().directoryCacheKey()
+        is OkOutputFile -> path.toPath().regularFileCacheKey()
     }
 }
 

@@ -1,6 +1,8 @@
 package io.sellmair.okay.maven
 
 import io.sellmair.okay.*
+import io.sellmair.okay.io.OkPath
+import io.sellmair.okay.io.toOk
 import kotlinx.coroutines.runBlocking
 import java.net.URI
 import java.nio.file.Path
@@ -10,15 +12,14 @@ import kotlin.io.path.outputStream
 fun OkContext.mavenResolveDependency(
     outputDirectory: Path,
     mavenCoordinates: MavenCoordinates,
-): OkAsync<Path> {
+): OkAsync<OkPath> {
     val group = mavenCoordinates.group
     val artifact = mavenCoordinates.artifact
     val version = mavenCoordinates.version
 
-    runBlocking {  }
     val outputFile = outputDirectory.resolve("$group-$artifact-$version.jar")
 
-    return cached(
+    return launchTask(
         "resolve: '$group:$artifact:$version'",
         input = listOf(
             OkStringInput(group),
@@ -42,6 +43,6 @@ fun OkContext.mavenResolveDependency(
         URI.create(urlString).toURL().openStream()
             .copyTo(outputFile.outputStream())
 
-        outputFile
+        outputFile.toOk()
     }
 }
