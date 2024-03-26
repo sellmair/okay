@@ -15,8 +15,8 @@ fun OkContext.kotlinCompileDependencies(): OkAsync<List<OkPath>> {
     ) {
         if (!libsFile.system().isRegularFile()) return@cachedTask emptyList()
         val modules = libsFile.system().readLines()
-            .filter { it.startsWith("okay:") }
-            .map { it.removePrefix("okay:").trim() }
+            .filter { it.startsWith("okay://") }
+            .map { it.removePrefix("okay://").trim() }
             .map { path(it) }
 
         val transitiveDependencies = modules.map { modulePath ->
