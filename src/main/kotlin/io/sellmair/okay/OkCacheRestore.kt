@@ -1,5 +1,7 @@
 package io.sellmair.okay
 
+import kotlinx.coroutines.withContext
+
 sealed class CacheResult<out T>
 data class CacheHit<T>(val entry: OkCacheEntry<T>) : CacheResult<T>()
 data object CacheMiss : CacheResult<Nothing>()
@@ -24,12 +26,14 @@ suspend fun <T> tryRestoreCacheUnchecked(cacheKey: OkHash): CacheResult<T> {
  */
 private suspend fun tryRestoreCacheChecked(cacheKey: OkHash): CacheResult<*>? {
     val entry = readCacheEntry(cacheKey) ?: return null
-    val inputState = entry.input.cacheKey()
-    if (inputState != cacheKey) {
-        log("Cache miss: '${entry.title}. Expected: ($cacheKey), found: ($inputState)")
-        return null
+    return withOkStack(entry.title) {
+        val inputState = entry.input.cacheKey()
+        if (inputState != cacheKey) {
+            log("Cache miss: '${entry.title}. Expected: ($cacheKey), found: ($inputState)")
+            return@withOkStack null
+        }
+        tryRestoreCache(entry)
     }
-    return tryRestoreCache(entry)
 }
 
 private suspend fun <T> tryRestoreCache(
@@ -44,7 +48,7 @@ private suspend fun <T> tryRestoreCache(
 
     val outputCacheKey = cacheEntry.output.cacheKey()
     if (outputCacheKey == cacheEntry.outputHash) {
-        log("UP-TO-DATE (${cacheEntry.key}) -> ($outputCacheKey) (${cacheEntry.title})")
+        log("UP-TO-DATE (${cacheEntry.key}) -> ($outputCacheKey)")
     } else {
         restoreFilesFromCache(cacheEntry)
         log("Cache Restored (${cacheEntry.key}) -> ($outputCacheKey)")

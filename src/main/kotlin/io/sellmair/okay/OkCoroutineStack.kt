@@ -1,7 +1,14 @@
 package io.sellmair.okay
 
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.withContext
 import kotlin.coroutines.CoroutineContext
+
+suspend fun <T> withOkStack(element: String, block: suspend () -> T): T {
+    return withContext(currentCoroutineContext().pushOkStack(element)) {
+        block()
+    }
+}
 
 val CoroutineContext.okStack: List<String>
     get() = (this[OkCoroutineStack] ?: error("Missing 'OkCoroutineStack'")).values
