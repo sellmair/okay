@@ -21,6 +21,12 @@ data class OkOutputDirectory(val path: OkPath) : OkOutput() {
     constructor(path: Path) : this(path.toOk())
 }
 
+fun OkOutput(vararg output: OkOutput): OkOutput {
+    val outputs = output.toList()
+    if (outputs.isEmpty()) return OkEmptyOutput
+    return OkCompositeOutput(outputs)
+}
+
 data class OkCompositeOutput(val values: List<OkOutput>) : OkOutput()
 
 @OptIn(ExperimentalPathApi::class)

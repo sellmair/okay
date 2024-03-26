@@ -20,7 +20,7 @@ fun main(args: Array<String>) {
     """.trimMargin()
     )
 
-    runOkay {
+    ok {
         if (args.singleOrNull() == "build") {
             kotlinCompile().await()
 

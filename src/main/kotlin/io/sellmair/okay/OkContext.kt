@@ -1,25 +1,33 @@
+@file:JvmName("OkContextKt")
+@file:Suppress("FunctionName")
+
 package io.sellmair.okay
 
+import kotlinx.coroutines.*
+
+fun ok(body: suspend OkContext.() -> Unit) {
+    runBlocking(Dispatchers.Default + OkCoroutineStack(emptyList()) + OkCoroutineCache() + Job()) {
+        with(OkContextImpl(CoroutineScope(coroutineContext))) {
+            body()
+        }
+    }
+}
+
 interface OkContext {
-    val stack: List<String>
-
-    fun log(value: String)
-
-    fun <T> launchTask(
-        title: String, input: OkInput, output: OkOutput, body: suspend OkContext.() -> T
-    ): OkAsync<T>
-
-    suspend fun <T> await0(async: OkAsync<T>): T
-
-    suspend fun <T> OkAsync<T>.await(): T = await0(this@await)
+    val cs: CoroutineScope
 }
 
+fun OkContext(cs: CoroutineScope): OkContext =
+    OkContextImpl(cs)
 
-fun <T> OkContext.launchTask(
-    title: String,
-    input: List<OkInput>,
-    output: List<OkOutput>,
-    body: suspend OkContext.() -> T
-): OkAsync<T> {
-    return launchTask(title, OkCompositeInput(input), OkCompositeOutput(output), body)
+
+suspend fun <T> OkContext(body: suspend OkContext.() -> T): T {
+    return coroutineScope {
+        with(OkContext(this)) {
+            body()
+        }
+    }
 }
+
+private class OkContextImpl(override val cs: CoroutineScope) : OkContext
+

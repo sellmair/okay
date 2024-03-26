@@ -15,6 +15,8 @@ data class OkStringInput(val value: String) : OkInput()
 
 data class OkCompositeInput(val values: List<OkInput>) : OkInput()
 
+fun OkInput(vararg inputs: OkInput) = OkCompositeInput(inputs.toList())
+
 operator fun OkInput.plus(other: OkInput): OkCompositeInput {
     if (this is OkCompositeInput && other is OkCompositeInput) {
         return OkCompositeInput(this.values + other.values)

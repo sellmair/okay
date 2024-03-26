@@ -3,7 +3,6 @@ package io.sellmair.okay.maven
 import io.sellmair.okay.*
 import io.sellmair.okay.io.OkPath
 import io.sellmair.okay.io.toOk
-import kotlinx.coroutines.runBlocking
 import java.net.URI
 import java.nio.file.Path
 import kotlin.io.path.createParentDirectories
@@ -19,14 +18,14 @@ fun OkContext.mavenResolveDependency(
 
     val outputFile = outputDirectory.resolve("$group-$artifact-$version.jar")
 
-    return launchTask(
+    return cachedTask(
         "resolve: '$group:$artifact:$version'",
-        input = listOf(
+        input = OkInput(
             OkStringInput(group),
             OkStringInput(artifact),
             OkStringInput(version)
         ),
-        output = listOf(OkOutputFile(outputFile))
+        output = OkOutputFile(outputFile)
     ) {
         log("Downloading $artifact:$version")
 

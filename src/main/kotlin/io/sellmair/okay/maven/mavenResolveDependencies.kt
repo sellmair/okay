@@ -8,7 +8,7 @@ import kotlin.io.path.readText
 fun OkContext.mavenResolveDependencies(): OkAsync<List<OkPath>> {
     val configurationFile = Path("okay")
     val mavenLibrariesDirectory = Path(".okay/libs/maven")
-    return launchTask(
+    return cachedTask(
         "resolve maven dependencies",
         input = OkFileInput(configurationFile),
         output = OkOutputDirectory(mavenLibrariesDirectory)

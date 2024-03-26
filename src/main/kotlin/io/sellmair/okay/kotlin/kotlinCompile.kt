@@ -27,7 +27,7 @@ fun OkContext.kotlinCompile(
     dependencies: List<Path>,
     outputDirectory: Path
 ): OkAsync<OkPath> {
-    return launchTask(
+    return cachedTask(
         "compile",
         input = OkCompositeInput(sources.map { OkFileInput(it) }) +
                 OkCompositeInput(dependencies.map { OkFileInput(it) }),
