@@ -1,8 +1,13 @@
-# This is a Sunday afternoon toy project!
+# okay: Kotlin Build Tool Experiment
 
-This is just a fun toy project on 'how I would build' a Kotlin build system.
+This project is experimental/educational. 
+It tries to explore the approach of a 'suspending task schedular' based build system.
 
-# Test this project
+## Demo
+[![Watch the video](https://img.youtube.com/vi/3Uywkd6v3T0/maxresdefault.jpg)](https://youtu.be/3Uywkd6v3T0)
+
+
+## Test this project
 
 To install the build tool, please execute
 
@@ -10,35 +15,35 @@ To install the build tool, please execute
 ./install
 ```
 
-## Build the test project (and it's a submodule 'library')
+### Build the test project (and it's a submodule 'library')
 
 ```shell
 cd testProject
 okay build
 ```
 
-## Run code from the test project
+### Run code from the test project
 
 ```shell
 cd testProject
 okay run
 ```
 
-## Run different main method from the test project
+### Run different main method from the test project
 
 ```shell
 cd testProject
 okay run echo
 ```
 
-## Run different main method from the test project (and provide params to the main method)
+### Run different main method from the test project (and provide params to the main method)
 
 ```shell
 cd testProject
 okay run echo firstArgument secondArgument thirdArgument="is a charm"
 ```
 
-## Clean the test project
+### Clean the test project
 
 ```shell
 cd testProject
