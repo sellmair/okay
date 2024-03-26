@@ -6,7 +6,7 @@ import java.io.Serializable
 class OkCacheEntry<T>(
     val key: OkHash,
     val value: T,
-    val title: String,
+    val taskDescriptor: OkTaskDescriptor<T>,
     val input: OkInput,
     val output: OkOutput,
     val outputHash: OkHash,

@@ -3,6 +3,7 @@
 package io.sellmair.okay.kotlin
 
 import io.sellmair.okay.*
+import io.sellmair.okay.OkTaskDescriptor.Verbosity.Info
 import io.sellmair.okay.io.OkPath
 import io.sellmair.okay.io.toOk
 import io.sellmair.okay.maven.mavenResolveDependencies
@@ -30,7 +31,7 @@ fun OkContext.kotlinCompile(
     outputDirectory: Path
 ): OkAsync<OkPath> {
     return cachedTask(
-        "kotlinCompile",
+        describeTask("kotlinCompile", verbosity = Info),
         input = OkCompositeInput(sources.map { OkFileInput(it) }) +
                 OkCompositeInput(dependencies.map { OkFileInput(it) }),
         output = OkCompositeOutput(listOf(OkOutputDirectory(outputDirectory)))

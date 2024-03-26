@@ -9,8 +9,8 @@ fun OkContext.kotlinCompileDependencies(): OkAsync<List<OkPath>> {
     val libsFile = modulePath("okay.libs")
 
     return cachedTask(
-        "compile dependencies",
-        input = OkFileInput(libsFile) + OkStringInput("compile dependencies of") + OkStringInput(modulePath().path),
+        describeTask("kotlinCompileDependencies"),
+        input = OkFileInput(libsFile),
         output = OkOutput()
     ) {
         if (!libsFile.system().isRegularFile()) return@cachedTask emptyList()

@@ -3,24 +3,25 @@ package io.sellmair.okay
 import kotlinx.coroutines.*
 
 fun <T> OkContext.cachedTask(
-    title: String, input: OkInput, output: OkOutput, body: suspend OkContext.() -> T
+    descriptor: OkTaskDescriptor<T>, input: OkInput, output: OkOutput, body: suspend OkContext.() -> T
 ): OkAsync<T> {
-    return cs.coroutineContext.okCoroutineCache.getOrPut(input + OkStringInput(title)) {
-        cs.restoreOrLaunchTask(title, input, output, body)
+    val effectiveInput = descriptor + input
+    return cs.coroutineContext.okCoroutineCache.getOrPut(effectiveInput) {
+        cs.restoreOrLaunchTask(descriptor, effectiveInput, output, body)
     }
 }
 
 private fun <T> CoroutineScope.restoreOrLaunchTask(
-    title: String, input: OkInput, output: OkOutput, body: suspend OkContext.() -> T
+    descriptor: OkTaskDescriptor<T>, input: OkInput, output: OkOutput, body: suspend OkContext.() -> T
 ): OkAsync<T> {
-    val deferred = async(coroutineContext.pushOkStack(title) + Job()) {
+    val deferred = async(coroutineContext.pushOkStack(descriptor.title) + Job()) {
         coroutineScope scope@{
             val inputCacheKey = input.cacheKey()
             bindOkCoroutineDependency(inputCacheKey)
 
             when (val cacheResult = tryRestoreCacheUnchecked<T>(inputCacheKey)) {
                 is CacheHit -> cacheResult.entry.value
-                is CacheMiss -> runTask(inputCacheKey, title, input, output, body)
+                is CacheMiss -> runTask(inputCacheKey, descriptor, input, output, body)
             }
         }
     }
@@ -29,14 +30,18 @@ private fun <T> CoroutineScope.restoreOrLaunchTask(
 }
 
 private suspend fun <T> runTask(
-    inputCacheKey: OkHash, title: String, input: OkInput, output: OkOutput, body: suspend OkContext.() -> T
+    inputCacheKey: OkHash,
+    descriptor: OkTaskDescriptor<T>,
+    input: OkInput,
+    output: OkOutput,
+    body: suspend OkContext.() -> T
 ): T {
     val resultWithDependencies = withOkCoroutineDependencies {
         OkContext { body() }
     }
 
     storeCache(
-        inputCacheKey, resultWithDependencies.value, title, input, output, resultWithDependencies.dependencies
+        inputCacheKey, resultWithDependencies.value, descriptor, input, output, resultWithDependencies.dependencies
     )
 
     return resultWithDependencies.value

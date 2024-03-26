@@ -1,6 +1,7 @@
 package io.sellmair.okay.maven
 
 import io.sellmair.okay.*
+import io.sellmair.okay.OkTaskDescriptor.Verbosity.Info
 import io.sellmair.okay.io.OkPath
 import io.sellmair.okay.io.toOk
 import io.sellmair.okay.utils.log
@@ -20,7 +21,7 @@ fun OkContext.mavenResolveDependency(
     val outputFile = outputDirectory.resolve("$group-$artifact-$version.jar")
 
     return cachedTask(
-        "resolve: '$group:$artifact:$version'",
+        describeTask("resolve: '$group:$artifact:$version'", verbosity = Info),
         input = OkInput(
             OkStringInput(group),
             OkStringInput(artifact),

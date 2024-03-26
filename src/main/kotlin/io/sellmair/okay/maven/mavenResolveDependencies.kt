@@ -9,7 +9,7 @@ fun OkContext.mavenResolveDependencies(): OkAsync<List<OkPath>> {
     val configurationFile = modulePath("okay.libs").system()
     val mavenLibrariesDirectory = path(".okay/libs/maven").system()
     return cachedTask(
-        "resolve maven dependencies",
+        describeTask("mavenResolveDependencies"),
         input = OkFileInput(configurationFile),
         output = OkOutputDirectory(mavenLibrariesDirectory)
     ) {

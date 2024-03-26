@@ -39,7 +39,7 @@ private fun writeCacheEntry(key: OkHash, value: OkCacheEntry<*>): Path {
 suspend fun <T> storeCache(
     key: OkHash,
     value: T,
-    title: String,
+    taskDescriptor: OkTaskDescriptor<T>,
     input: OkInput,
     output: OkOutput,
     dependencies: List<OkHash>
@@ -65,7 +65,7 @@ suspend fun <T> storeCache(
         val entry = OkCacheEntry(
             key = key,
             value = value,
-            title = title,
+            taskDescriptor = taskDescriptor,
             input = input,
             output = output,
             outputHash = outputHash.await(),
@@ -96,16 +96,6 @@ suspend fun restoreFilesFromCache(entry: OkCacheEntry<*>) {
     }
 }
 
-fun OkInput.cacheKey(): OkHash {
-    return when (this) {
-        is OkCompositeInput -> hash(values.map { it.cacheKey() })
-        is OkStringInput -> hash(value)
-        is OkFileInput -> path.system().let { systemPath ->
-            if(systemPath.isDirectory()) systemPath.directoryCacheKey()
-            else systemPath.regularFileCacheKey()
-        }
-    }
-}
 
 fun OkOutput.cacheKey(): OkHash {
     return when (this) {
@@ -116,7 +106,8 @@ fun OkOutput.cacheKey(): OkHash {
     }
 }
 
-private fun Path.directoryCacheKey(): OkHash {
+
+internal fun Path.directoryCacheKey(): OkHash {
     return hash {
         push(absolutePathString())
         if (isDirectory()) {
@@ -131,7 +122,7 @@ private fun Path.directoryCacheKey(): OkHash {
     }
 }
 
-private fun Path.regularFileCacheKey(): OkHash {
+internal fun Path.regularFileCacheKey(): OkHash {
     return hash {
         push(absolutePathString())
         push(if (exists()) 1 else 0)
