@@ -3,6 +3,7 @@ package io.sellmair.okay.maven
 import io.sellmair.okay.*
 import io.sellmair.okay.io.OkPath
 import io.sellmair.okay.io.toOk
+import io.sellmair.okay.utils.log
 import java.net.URI
 import java.nio.file.Path
 import kotlin.io.path.createParentDirectories

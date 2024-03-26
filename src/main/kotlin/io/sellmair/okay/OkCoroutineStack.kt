@@ -23,7 +23,3 @@ data class OkCoroutineStack(val values: List<String>) : CoroutineContext.Element
     companion object Key : CoroutineContext.Key<OkCoroutineStack>
 }
 
-suspend fun log(value: String) {
-    val stack = currentCoroutineContext()[OkCoroutineStack]?.values ?: return
-    println("[${stack.joinToString("/")}]: $value")
-}

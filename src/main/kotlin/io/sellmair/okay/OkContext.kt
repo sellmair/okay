@@ -4,6 +4,7 @@
 package io.sellmair.okay
 
 import kotlinx.coroutines.*
+import kotlin.coroutines.CoroutineContext
 
 fun ok(body: suspend OkContext.() -> Unit) {
     runBlocking(Dispatchers.Default + OkCoroutineStack(emptyList()) + OkCoroutineCache() + Job()) {
@@ -15,6 +16,10 @@ fun ok(body: suspend OkContext.() -> Unit) {
 
 interface OkContext {
     val cs: CoroutineScope
+}
+
+internal operator fun OkContext.plus(element: CoroutineContext.Element): OkContext {
+    return OkContext(CoroutineScope(cs.coroutineContext + element))
 }
 
 fun OkContext(cs: CoroutineScope): OkContext =

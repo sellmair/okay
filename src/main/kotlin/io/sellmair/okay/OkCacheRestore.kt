@@ -1,6 +1,6 @@
 package io.sellmair.okay
 
-import kotlinx.coroutines.withContext
+import io.sellmair.okay.utils.log
 
 sealed class CacheResult<out T>
 data class CacheHit<T>(val entry: OkCacheEntry<T>) : CacheResult<T>()
@@ -56,5 +56,3 @@ private suspend fun <T> tryRestoreCache(
 
     return CacheHit(cacheEntry)
 }
-
-

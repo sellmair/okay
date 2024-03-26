@@ -5,7 +5,7 @@ import kotlinx.coroutines.*
 fun <T> OkContext.cachedTask(
     title: String, input: OkInput, output: OkOutput, body: suspend OkContext.() -> T
 ): OkAsync<T> {
-    return cs.coroutineContext.okCoroutineCache.getOrPut(input) {
+    return cs.coroutineContext.okCoroutineCache.getOrPut(input + OkStringInput(title)) {
         cs.restoreOrLaunchTask(title, input, output, body)
     }
 }

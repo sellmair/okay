@@ -2,13 +2,12 @@ package io.sellmair.okay.maven
 
 import io.sellmair.okay.*
 import io.sellmair.okay.io.OkPath
-import kotlin.io.path.Path
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.readText
 
 fun OkContext.mavenResolveDependencies(): OkAsync<List<OkPath>> {
-    val configurationFile = Path("okay.libs")
-    val mavenLibrariesDirectory = Path(".okay/libs/maven")
+    val configurationFile = modulePath("okay.libs").system()
+    val mavenLibrariesDirectory = path(".okay/libs/maven").system()
     return cachedTask(
         "resolve maven dependencies",
         input = OkFileInput(configurationFile),

@@ -3,6 +3,7 @@
 package io.sellmair.okay
 
 import io.sellmair.okay.kotlin.kotlinCompile
+import io.sellmair.okay.utils.log
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.Path
 import kotlin.io.path.deleteRecursively
@@ -34,5 +35,4 @@ fun main(args: Array<String>) {
             Path("build").deleteRecursively()
         }
     }
-
 }

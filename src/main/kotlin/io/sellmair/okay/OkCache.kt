@@ -100,7 +100,10 @@ fun OkInput.cacheKey(): OkHash {
     return when (this) {
         is OkCompositeInput -> hash(values.map { it.cacheKey() })
         is OkStringInput -> hash(value)
-        is OkFileInput -> path.toPath().regularFileCacheKey()
+        is OkFileInput -> path.system().let { systemPath ->
+            if(systemPath.isDirectory()) systemPath.directoryCacheKey()
+            else systemPath.regularFileCacheKey()
+        }
     }
 }
 

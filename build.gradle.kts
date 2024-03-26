@@ -1,4 +1,3 @@
-import org.jetbrains.kotlin.cli.js.internal.main
 import kotlin.io.path.Path
 
 plugins {
@@ -13,7 +12,6 @@ kotlin {
 repositories {
     mavenCentral()
 }
-
 
 tasks.register<Sync>("packageLibraries") {
     from(project.configurations.getByName(kotlin.target.compilations["main"].runtimeDependencyConfigurationName))
