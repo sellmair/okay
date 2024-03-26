@@ -3,8 +3,6 @@ import io.sellmair.testProject.library.Library
 
 fun main() {
     runBlocking {
-        Library().importantFunction()
-
-        println("Okay!")
+        println("Okay: ${Library().importantFunction()}")
     }
 }

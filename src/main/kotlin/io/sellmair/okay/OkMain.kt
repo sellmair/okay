@@ -3,6 +3,7 @@
 package io.sellmair.okay
 
 import io.sellmair.okay.kotlin.kotlinCompile
+import io.sellmair.okay.kotlin.kotlinRun
 import io.sellmair.okay.utils.log
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.Path
@@ -24,7 +25,10 @@ fun main(args: Array<String>) {
     ok {
         if (args.singleOrNull() == "build") {
             kotlinCompile().await()
+        }
 
+        if(args.firstOrNull() == "run") {
+            kotlinRun(args.getOrNull(1), args.drop(2))
         }
 
         if (args.singleOrNull() == "clean") {

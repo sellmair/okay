@@ -1,5 +1,5 @@
 package io.sellmair.testProject.library
 
 class Library {
-    fun importantFunction() = Unit
+    fun importantFunction() = "This is important!"
 }

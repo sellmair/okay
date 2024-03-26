@@ -19,10 +19,19 @@ fun OkContext.kotlinCompileDependencies(): OkAsync<List<OkPath>> {
             .map { it.removePrefix("okay:").trim() }
             .map { path(it) }
 
-        modules.map { modulePath ->
+        val transitiveDependencies = modules.map { modulePath ->
+            withModule(modulePath) {
+                kotlinCompileDependencies()
+            }
+        }
+
+        val directDependencies = modules.map { modulePath ->
             withModule(modulePath) {
                 kotlinCompile()
             }
-        }.map { it.await() }
+        }
+
+        transitiveDependencies.flatMap { it.await() } +
+                directDependencies.map { it.await() }
     }
 }
