@@ -55,6 +55,7 @@ tasks.register<JavaExec>("buildTestProject") {
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-compiler-embeddable:1.9.23")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
 }

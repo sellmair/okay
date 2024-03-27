@@ -1,0 +1,10 @@
+[
+  {
+    "class": "SayOkayKt"
+  },
+  {
+    "name": "echo",
+    "class": "EchoKt",
+    "function": "run"
+  }
+]

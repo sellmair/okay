@@ -1,3 +1,3 @@
-fun main(args: Array<String>) {
+fun run(args: Array<String>) {
     println("You're arguments were '${args.joinToString("; ")}'")
 }
