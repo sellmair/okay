@@ -1,7 +1,6 @@
 package io.sellmair.okay.maven
 
 import io.sellmair.okay.*
-import io.sellmair.okay.OkTaskDescriptor.Verbosity.Info
 import io.sellmair.okay.io.OkPath
 import io.sellmair.okay.io.toOk
 import io.sellmair.okay.utils.log
