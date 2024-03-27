@@ -9,6 +9,25 @@ internal class OkCoroutine<T>(
     val value: Deferred<T>
 )
 
+/**
+ * Launches a coroutine with the given [body]:
+ * Unlike [launchCachedCoroutine], this method will not store the output of the calculation of [body] in
+ * the .okay cache.
+ *
+ * However, the coroutine (and the returned [OkAsync] value) will be memoized during the build.
+ *
+ * ### Typical usages of this method:
+ * E.g., parsing some file that is already on disk:
+ * It makes no sense to store the output of the read/parse into the cache, as the file we're parsing
+ * is already in binary format. In this case, however, we still would like
+ * to ensure that this operation is not done over and over and over again:
+ *
+ * Using this method, we can launch and share a coroutine, which can be shared across the build.
+ *
+ * ### Using Input.
+ * Note: This body can freely call and await other memoized or cached coroutines.
+ * It shall declare the [input] it directly uses and will record the input of child coroutines.
+ */
 fun <T> OkContext.launchMemoizedCoroutine(
     descriptor: OkCoroutineDescriptor<T>, input: OkInput, body: suspend OkContext.() -> T
 ): OkAsync<T> {
@@ -39,6 +58,19 @@ fun <T> OkContext.launchMemoizedCoroutine(
     return OkAsync { coroutine.value.await() }
 }
 
+/**
+ * Will launch a coroutine which will be shared and then cached.
+ * If the computation was already done previously, the returned [OkAsync] will be able to provide
+ * the value immediately. If an entry in the .okay cache is found, it will be checked and deserialized.
+ *
+ * @param input The input that this coroutine requires: Note: Inputs from child coroutines do not need
+ * to be declared here.
+ *
+ * @param output The output that this coroutine will store as side effect. This can be a downloaded library file
+ * or an entire output directory of a given compilation. Note: Outputs of child coroutines do not need
+ * to be declared here.
+ *
+ */
 fun <T> OkContext.launchCachedCoroutine(
     descriptor: OkCoroutineDescriptor<T>, input: OkInput, output: OkOutput, body: suspend OkContext.() -> T
 ): OkAsync<T> {
