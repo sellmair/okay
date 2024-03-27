@@ -1,7 +1,7 @@
 package io.sellmair.okay.kotlin
 
 import io.sellmair.okay.OkContext
-import io.sellmair.okay.maven.mavenResolveDependencies
+import io.sellmair.okay.maven.mavenResolveRuntimeDependencies
 import io.sellmair.okay.modulePath
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
@@ -13,10 +13,9 @@ import kotlin.io.path.inputStream
 import kotlin.io.path.isRegularFile
 
 suspend fun OkContext.kotlinRun(target: String? = null, arguments: List<String>) {
-    val mavenDependencies = mavenResolveDependencies()
-    val moduleDependencies = kotlinCompileDependencies()
+    val mavenDependencies = mavenResolveRuntimeDependencies()
+    val moduleDependencies = kotlinCompileRuntimeDependencies()
     val compiled = kotlinCompile().await()
-
 
     val runConfigurationFile = modulePath("okay.run.json").system()
     if (!runConfigurationFile.isRegularFile()) error("Missing '$runConfigurationFile'")

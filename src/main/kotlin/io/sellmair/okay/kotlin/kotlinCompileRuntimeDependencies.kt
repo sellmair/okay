@@ -1,16 +1,17 @@
 package io.sellmair.okay.kotlin
 
 import io.sellmair.okay.*
-import io.sellmair.okay.dependency.compileDependenciesClosure
+import io.sellmair.okay.dependency.runtimeDependenciesClosure
 import io.sellmair.okay.io.OkPath
+import io.sellmair.okay.withModule
 
-fun OkContext.kotlinCompileDependencies(): OkAsync<List<OkPath>> {
+fun OkContext.kotlinCompileRuntimeDependencies(): OkAsync<List<OkPath>> {
     return launchCachedCoroutine(
-        describeTask("kotlinCompileDependencies"),
+        describeTask("kotlinCompileRuntimeDependencies"),
         input = OkInput.none(),
         output = OkOutput.none()
     ) {
-        val dependencyModulesClosure = compileDependenciesClosure().await()
+        val dependencyModulesClosure = runtimeDependenciesClosure().await()
             .mapNotNull { it.dependencyModulePath() }
 
         dependencyModulesClosure.map { dependencyModule ->

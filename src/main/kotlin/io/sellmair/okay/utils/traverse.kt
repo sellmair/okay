@@ -52,6 +52,28 @@ inline fun <reified T> T.withClosure(edges: (T) -> Iterable<T>): Set<T> {
     return results
 }
 
+/**
+ * @see closure
+ * @receiver: Will be included in the return set
+ */
+inline fun <reified T> Iterable<T>.withClosure(edges: (T) -> Iterable<T>): Set<T> {
+    val dequeue = if (this is Collection) {
+        if (this.isEmpty()) return emptySet()
+        ArrayDeque(this)
+    } else createDequeueFromIterable(this)
+
+    val results = createResultSet<T>()
+
+    while (dequeue.isNotEmpty()) {
+        val element = dequeue.removeAt(0)
+        if (results.add(element)) {
+            dequeue.addAll(edges(element))
+        }
+    }
+
+    return results
+}
+
 @PublishedApi
 internal fun <T> createResultSet(initialSize: Int = 16): MutableSet<T> {
     return LinkedHashSet(initialSize)

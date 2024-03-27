@@ -1,5 +1,7 @@
 package io.sellmair.okay
 
+import io.sellmair.okay.utils.ansiGreen
+import io.sellmair.okay.utils.ansiReset
 import io.sellmair.okay.utils.log
 
 sealed class CacheResult<out T>
@@ -48,7 +50,7 @@ private suspend fun <T> tryRestoreCache(
 
     val outputCacheKey = cacheEntry.output.cacheKey()
     if (outputCacheKey == cacheEntry.outputHash) {
-        log("UP-TO-DATE (${cacheEntry.key}) -> ($outputCacheKey)")
+        log("${ansiGreen}UP-TO-DATE${ansiReset} (${cacheEntry.key}) -> ($outputCacheKey)")
     } else {
         restoreFilesFromCache(cacheEntry)
         log("Cache Restored (${cacheEntry.key}) -> ($outputCacheKey)")

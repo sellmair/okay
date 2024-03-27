@@ -7,7 +7,11 @@ import java.nio.file.Path
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.walk
 
-sealed class OkOutput : Serializable
+sealed class OkOutput : Serializable {
+    companion object {
+        fun none(): OkOutput = OkCompositeOutput(emptyList())
+    }
+}
 
 data object OkEmptyOutput : OkOutput() {
     private fun readResolve(): Any = OkEmptyOutput

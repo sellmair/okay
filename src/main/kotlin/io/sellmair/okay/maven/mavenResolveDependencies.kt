@@ -2,21 +2,30 @@ package io.sellmair.okay.maven
 
 import io.sellmair.okay.*
 import io.sellmair.okay.io.OkPath
-import kotlin.io.path.isRegularFile
-import kotlin.io.path.readText
+import io.sellmair.okay.dependency.compileDependenciesClosure
+import io.sellmair.okay.dependency.runtimeDependenciesClosure
 
-fun OkContext.mavenResolveDependencies(): OkAsync<List<OkPath>> {
-    val configurationFile = modulePath("okay.libs").system()
+private enum class MavenResolveDependenciesScope {
+    Compile, Runtime
+}
+
+fun OkContext.mavenResolveCompileDependencies(): OkAsync<List<OkPath>> {
+    return mavenResolveRuntimeDependencies(MavenResolveDependenciesScope.Compile)
+}
+
+fun OkContext.mavenResolveRuntimeDependencies(): OkAsync<List<OkPath>> {
+    return mavenResolveRuntimeDependencies(MavenResolveDependenciesScope.Runtime)
+}
+
+private fun OkContext.mavenResolveRuntimeDependencies(scope: MavenResolveDependenciesScope): OkAsync<List<OkPath>> {
     val mavenLibrariesDirectory = path(".okay/libs/maven").system()
-    return cachedTask(
-        describeTask("mavenResolveDependencies"),
-        input = OkFileInput(configurationFile),
-        output = OkOutputDirectory(mavenLibrariesDirectory)
+    return launchCachedCoroutine(
+        describeTask("mavenResolve${scope}Dependencies"),
+        input = OkInput.none(),
+        output = OkOutput.none()
     ) {
-        if (!configurationFile.isRegularFile()) return@cachedTask emptyList()
-
-        val parsedCoordinates = configurationFile.readText().lines()
-            .mapNotNull { line -> parseMavenCoordinates(line) }
+        val parsedCoordinates = dependenciesClosure(scope).await()
+            .mapNotNull { declaration -> parseMavenCoordinates(declaration.value) }
 
         val resolvedDependencies = parsedCoordinates.map { coordinates ->
             mavenResolveDependency(mavenLibrariesDirectory, coordinates)
@@ -24,6 +33,11 @@ fun OkContext.mavenResolveDependencies(): OkAsync<List<OkPath>> {
 
         resolvedDependencies
     }
+}
+
+private fun OkContext.dependenciesClosure(scope: MavenResolveDependenciesScope) = when (scope) {
+    MavenResolveDependenciesScope.Compile -> compileDependenciesClosure()
+    MavenResolveDependenciesScope.Runtime -> runtimeDependenciesClosure()
 }
 
 private val mavenCoordinatesRegex = Regex("""(.*):(.*):(.*)""")

@@ -11,7 +11,6 @@ import kotlin.io.path.deleteRecursively
 
 @OptIn(ExperimentalPathApi::class)
 fun main(args: Array<String>) {
-
     println(
         """
         |   ___   _  __    _  __   __

@@ -9,7 +9,13 @@ import kotlin.io.path.isDirectory
 abstract class OkInput : Serializable {
     fun cacheKey(): OkHash = currentState()
     abstract fun currentState(): OkHash
+
+    companion object {
+        fun none(): OkInput = OkCompositeInput(emptyList())
+    }
 }
+
+fun OkInput(vararg inputs: OkInput) = OkCompositeInput(inputs.toList())
 
 data class OkFileInput(val path: OkPath) : OkInput() {
     constructor(path: Path) : this(path.toOk())
@@ -37,7 +43,6 @@ data class OkCompositeInput(val values: List<OkInput>) : OkInput() {
     }
 }
 
-fun OkInput(vararg inputs: OkInput) = OkCompositeInput(inputs.toList())
 
 operator fun OkInput.plus(other: OkInput): OkCompositeInput {
     if (this is OkCompositeInput && other is OkCompositeInput) {

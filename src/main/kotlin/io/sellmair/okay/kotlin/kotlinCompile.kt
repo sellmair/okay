@@ -6,7 +6,7 @@ import io.sellmair.okay.*
 import io.sellmair.okay.OkTaskDescriptor.Verbosity.Info
 import io.sellmair.okay.io.OkPath
 import io.sellmair.okay.io.toOk
-import io.sellmair.okay.maven.mavenResolveDependencies
+import io.sellmair.okay.maven.mavenResolveCompileDependencies
 import io.sellmair.okay.utils.log
 import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
 import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
@@ -19,7 +19,7 @@ import kotlin.io.path.*
 suspend fun OkContext.kotlinCompile(): OkAsync<OkPath> {
     val mainSourcesDir = modulePath("src").system()
     val kotlinSources = mainSourcesDir.walk().filter { it.extension == "kt" }.toList()
-    val dependencies = mavenResolveDependencies().await().map { it.system() } +
+    val dependencies = mavenResolveCompileDependencies().await().map { it.system() } +
             kotlinCompileDependencies().await().map { it.system() }
 
     return kotlinCompile(kotlinSources, dependencies, modulePath("build/main/classes").system())
@@ -30,7 +30,7 @@ fun OkContext.kotlinCompile(
     dependencies: List<Path>,
     outputDirectory: Path
 ): OkAsync<OkPath> {
-    return cachedTask(
+    return launchCachedCoroutine(
         describeTask("kotlinCompile", verbosity = Info),
         input = OkCompositeInput(sources.map { OkFileInput(it) }) +
                 OkCompositeInput(dependencies.map { OkFileInput(it) }),

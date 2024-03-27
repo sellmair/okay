@@ -14,6 +14,12 @@ fun ok(body: suspend OkContext.() -> Unit) {
     }
 }
 
+/**
+ * ⚠️Maybe this should be changed to also implement CoroutineScope direclty?
+ * This is used mostly by OkContext {} to provide a scope.
+ * Furthermore `suspend fun OkContext.foo()`  might be easy to mess up:
+ * What coroutine context is correct? The cs.coroutineContext or currentCoroutineContext()?
+ */
 interface OkContext {
     val cs: CoroutineScope
 }

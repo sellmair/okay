@@ -9,15 +9,15 @@ internal val CoroutineContext.okCoroutineCache: OkCoroutineCache
 
 internal class OkCoroutineCache : CoroutineContext.Element {
     private val lock = ReentrantLock()
-    private val values = HashMap<OkInput, OkAsync<*>>()
+    private val values = HashMap<OkInput, OkCoroutine<*>>()
     override val key: CoroutineContext.Key<*> = Key
 
     companion object Key : CoroutineContext.Key<OkCoroutineCache>
 
-    fun <T> getOrPut(input: OkInput, create: () -> OkAsync<T>): OkAsync<T> {
+    fun <T> getOrPut(input: OkInput, create: () -> OkCoroutine<T>): OkCoroutine<T> {
         @Suppress("UNCHECKED_CAST")
         return lock.withLock {
             values.getOrPut(input, create)
-        } as OkAsync<T>
+        } as OkCoroutine<T>
     }
 }
