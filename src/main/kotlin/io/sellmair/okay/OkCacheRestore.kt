@@ -15,7 +15,6 @@ internal data object CacheMiss : CacheResult()
  */
 internal suspend fun tryRestoreCacheUnchecked(cacheKey: OkHash): CacheResult {
     val cacheEntry = readCacheEntry(cacheKey) ?: run {
-        log("Cache Miss ($cacheKey): Missing")
         return CacheMiss
     }
 

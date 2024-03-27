@@ -5,14 +5,16 @@ import io.sellmair.okay.OkModuleContext
 import io.sellmair.okay.OkCoroutineDescriptor
 import kotlinx.coroutines.currentCoroutineContext
 
-const val ansiReset = "\u001B[0m"
-const val ansiCyan = "\u001B[36m"
-const val ansiGreen = "\u001B[32m"
+internal const val ansiReset = "\u001B[0m"
+internal const val ansiCyan = "\u001B[36m"
+internal const val ansiGreen = "\u001B[32m"
+internal const val ansiPurple = "\u001B[35m"
+internal const val ansiYellow = "\u001B[33m"
 
 suspend fun log(value: String) {
     val stack = currentCoroutineContext()[OkCoroutineStack]?.values.orEmpty()
         .filter { it.verbosity >= OkCoroutineDescriptor.Verbosity.Info }
-        .map { it.title }
+        .map { "$ansiPurple${it.title}$ansiReset" }
         .ifEmpty { return }
 
     val modulePath = currentCoroutineContext()[OkModuleContext]?.path?.path ?: "<root>"
@@ -20,7 +22,7 @@ suspend fun log(value: String) {
     println(
         buildString {
             if (modulePath.isNotBlank()) {
-                append("{{${ansiCyan}$modulePath${ansiReset}}} >> ")
+                append("{{${ansiCyan}$modulePath${ansiReset}}} $ansiYellow>>$ansiReset ")
             }
 
             append("[")
