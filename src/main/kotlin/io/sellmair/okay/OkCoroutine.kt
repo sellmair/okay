@@ -16,7 +16,9 @@ fun <T> OkContext.launchMemoizedCoroutine(
     val coroutine = cs.coroutineContext.okCoroutineCache.getOrPut(effectiveInput) {
         launchOkCoroutine(effectiveInput) { _ ->
             /* ⚠️ The dependencies need to be captured and stored in the cache!!  */
-            body()
+            withOkStack(descriptor) {
+                body()
+            }
         }
     }
 
@@ -59,7 +61,7 @@ fun <T> OkContext.launchCachedCoroutine(
 private fun <T> OkContext.restoreOrLaunchTask(
     descriptor: OkTaskDescriptor<T>, input: OkInput, output: OkOutput, body: suspend OkContext.() -> T
 ): OkCoroutine<T> {
-    return launchOkCoroutine(input, cs.coroutineContext.pushOkStack(descriptor.title) + Job()) { key ->
+    return launchOkCoroutine(input, cs.coroutineContext.pushOkStack(descriptor) + Job()) { key ->
         when (val cacheResult = tryRestoreCacheUnchecked<T>(key)) {
             is CacheHit -> cacheResult.entry.value
             is CacheMiss -> runTask(key, descriptor, input, output, body)

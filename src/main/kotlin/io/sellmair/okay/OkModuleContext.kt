@@ -6,6 +6,8 @@ import kotlin.coroutines.CoroutineContext
 
 fun OkContext.path(value: String) = OkPath(value)
 
+fun OkContext.rootModulePath() = OkPath("")
+
 fun OkContext.modulePath(): OkPath {
     return cs.coroutineContext[OkModuleContext]?.path ?: OkPath("")
 }

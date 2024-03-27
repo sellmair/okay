@@ -35,3 +35,13 @@ inline fun <reified T> OkContext.describeTask(
         id = id, title = title, module = modulePath(), verbosity, signatureOfT = typeOf<T>().toString()
     )
 }
+
+inline fun <reified T> OkContext.describeRootTask(
+    id: String,
+    title: String = id,
+    verbosity: OkTaskDescriptor.Verbosity = OkTaskDescriptor.Verbosity.Debug
+): OkTaskDescriptor<T> {
+    return OkTaskDescriptor(
+        id = id, title = title, module = rootModulePath(), verbosity, signatureOfT = typeOf<T>().toString()
+    )
+}

@@ -28,10 +28,10 @@ suspend fun <T> tryRestoreCacheUnchecked(cacheKey: OkHash): CacheResult<T> {
  */
 private suspend fun tryRestoreCacheChecked(cacheKey: OkHash): CacheResult<*>? {
     val entry = readCacheEntry(cacheKey) ?: return null
-    return withOkStack(entry.taskDescriptor.title) {
+    return withOkStack(entry.taskDescriptor) {
         val inputState = entry.input.cacheKey()
         if (inputState != cacheKey) {
-            log("Cache miss: '${entry.taskDescriptor.title}. Expected: ($cacheKey), found: ($inputState)")
+            log("Cache miss. Expected: ($cacheKey), found: ($inputState)")
             return@withOkStack null
         }
         tryRestoreCache(entry)
