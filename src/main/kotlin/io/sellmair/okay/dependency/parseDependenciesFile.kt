@@ -11,7 +11,7 @@ fun OkContext.parseDependenciesFile(): OkAsync<OkDependenciesFile?> {
     val dependenciesFile = modulePath("okay.libs.json")
 
     return launchMemoizedCoroutine(
-        describeTask("parseLibsFile"),
+        describeCoroutine("parseLibsFile"),
         input = OkFileInput(dependenciesFile)
     ) task@{
         val file = dependenciesFile.system()

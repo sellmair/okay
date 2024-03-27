@@ -4,7 +4,7 @@ import io.sellmair.okay.io.OkPath
 import java.io.Serializable
 import kotlin.reflect.typeOf
 
-data class OkTaskDescriptor<T>(
+data class OkCoroutineDescriptor<T>(
     val id: String,
     val title: String,
     val module: OkPath,
@@ -26,22 +26,22 @@ data class OkTaskDescriptor<T>(
     }
 }
 
-inline fun <reified T> OkContext.describeTask(
+inline fun <reified T> OkContext.describeCoroutine(
     id: String,
     title: String = id,
-    verbosity: OkTaskDescriptor.Verbosity = OkTaskDescriptor.Verbosity.Debug
-): OkTaskDescriptor<T> {
-    return OkTaskDescriptor(
+    verbosity: OkCoroutineDescriptor.Verbosity = OkCoroutineDescriptor.Verbosity.Debug
+): OkCoroutineDescriptor<T> {
+    return OkCoroutineDescriptor(
         id = id, title = title, module = modulePath(), verbosity, signatureOfT = typeOf<T>().toString()
     )
 }
 
-inline fun <reified T> OkContext.describeRootTask(
+inline fun <reified T> OkContext.describeRootCoroutine(
     id: String,
     title: String = id,
-    verbosity: OkTaskDescriptor.Verbosity = OkTaskDescriptor.Verbosity.Debug
-): OkTaskDescriptor<T> {
-    return OkTaskDescriptor(
+    verbosity: OkCoroutineDescriptor.Verbosity = OkCoroutineDescriptor.Verbosity.Debug
+): OkCoroutineDescriptor<T> {
+    return OkCoroutineDescriptor(
         id = id, title = title, module = rootModulePath(), verbosity, signatureOfT = typeOf<T>().toString()
     )
 }

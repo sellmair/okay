@@ -10,15 +10,19 @@ internal class OkCoroutine<T>(
 )
 
 fun <T> OkContext.launchMemoizedCoroutine(
-    descriptor: OkTaskDescriptor<T>, input: OkInput, body: suspend OkContext.() -> T
+    descriptor: OkCoroutineDescriptor<T>, input: OkInput, body: suspend OkContext.() -> T
 ): OkAsync<T> {
     val effectiveInput = descriptor + input
     val coroutine = cs.coroutineContext.okCoroutineCache.getOrPut(effectiveInput) {
-        launchOkCoroutine(effectiveInput) { _ ->
-            /* ⚠️ The dependencies need to be captured and stored in the cache!!  */
-            withOkStack(descriptor) {
-                body()
+        launchOkCoroutine(effectiveInput) { key ->
+            val result = withOkStack(descriptor) {
+                withOkCoroutineDependencies { OkContext { body() } }
             }
+
+            val cacheRecord = OkInputCacheRecordImpl(key, effectiveInput, descriptor, result.dependencies)
+            storeCacheRecord(cacheRecord)
+
+            result.value
         }
     }
 
@@ -36,7 +40,7 @@ fun <T> OkContext.launchMemoizedCoroutine(
 }
 
 fun <T> OkContext.launchCachedCoroutine(
-    descriptor: OkTaskDescriptor<T>, input: OkInput, output: OkOutput, body: suspend OkContext.() -> T
+    descriptor: OkCoroutineDescriptor<T>, input: OkInput, output: OkOutput, body: suspend OkContext.() -> T
 ): OkAsync<T> {
     val effectiveInput = descriptor + input
     /* How to bind dependencies from the 'cached' coroutine? */
@@ -59,11 +63,12 @@ fun <T> OkContext.launchCachedCoroutine(
 }
 
 private fun <T> OkContext.restoreOrLaunchTask(
-    descriptor: OkTaskDescriptor<T>, input: OkInput, output: OkOutput, body: suspend OkContext.() -> T
+    descriptor: OkCoroutineDescriptor<T>, input: OkInput, output: OkOutput, body: suspend OkContext.() -> T
 ): OkCoroutine<T> {
     return launchOkCoroutine(input, cs.coroutineContext.pushOkStack(descriptor) + Job()) { key ->
-        when (val cacheResult = tryRestoreCacheUnchecked<T>(key)) {
-            is CacheHit -> cacheResult.entry.value
+        @Suppress("UNCHECKED_CAST")
+        when (val cacheResult = tryRestoreCacheUnchecked(key)) {
+            is CacheHit -> (cacheResult.entry as OkOutputCacheRecord<*>).value as T
             is CacheMiss -> runTask(key, descriptor, input, output, body)
         }
     }
@@ -71,7 +76,7 @@ private fun <T> OkContext.restoreOrLaunchTask(
 
 private suspend fun <T> runTask(
     inputCacheKey: OkHash,
-    descriptor: OkTaskDescriptor<T>,
+    descriptor: OkCoroutineDescriptor<T>,
     input: OkInput,
     output: OkOutput,
     body: suspend OkContext.() -> T

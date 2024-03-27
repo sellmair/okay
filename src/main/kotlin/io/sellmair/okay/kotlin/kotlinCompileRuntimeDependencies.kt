@@ -7,7 +7,7 @@ import io.sellmair.okay.withModule
 
 fun OkContext.kotlinCompileRuntimeDependencies(): OkAsync<List<OkPath>> {
     return launchCachedCoroutine(
-        describeTask("kotlinCompileRuntimeDependencies"),
+        describeCoroutine("kotlinCompileRuntimeDependencies"),
         input = OkInput.none(),
         output = OkOutput.none()
     ) {

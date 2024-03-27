@@ -5,7 +5,7 @@ import io.sellmair.okay.utils.withClosure
 import io.sellmair.okay.withModule
 
 fun OkContext.compileDependenciesClosure(): OkAsync<Set<OkDependencyDeclaration>> {
-    return launchMemoizedCoroutine(describeTask("compileDependenciesClosure"), input = OkInput.none()) {
+    return launchMemoizedCoroutine(describeCoroutine("compileDependenciesClosure"), input = OkInput.none()) {
         parseDependenciesFile().await()?.declarations.orEmpty()
             .filter { it.isCompile }
             .withClosure<OkDependencyDeclaration> closure@{ declaration ->
@@ -18,7 +18,7 @@ fun OkContext.compileDependenciesClosure(): OkAsync<Set<OkDependencyDeclaration>
 }
 
 fun OkContext.runtimeDependenciesClosure(): OkAsync<Set<OkDependencyDeclaration>> {
-    return launchMemoizedCoroutine(describeTask("runtimeDependenciesClosure"), input = OkInput.none()) {
+    return launchMemoizedCoroutine(describeCoroutine("runtimeDependenciesClosure"), input = OkInput.none()) {
         parseDependenciesFile().await()?.declarations.orEmpty()
             .filter { it.isRuntime }
             .withClosure<OkDependencyDeclaration> closure@{ declaration ->

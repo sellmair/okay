@@ -20,7 +20,7 @@ fun OkContext.mavenResolveDependency(
     val outputFile = outputDirectory.resolve("$group-$artifact-$version.jar")
 
     return launchCachedCoroutine(
-        describeRootTask("resolve: '$group:$artifact:$version'"),
+        describeRootCoroutine("resolve: '$group:$artifact:$version'"),
         input = OkInput(
             OkStringInput(group),
             OkStringInput(artifact),

@@ -1,7 +1,7 @@
 package io.sellmair.okay.maven
 
 import io.sellmair.okay.*
-import io.sellmair.okay.OkTaskDescriptor.Verbosity.Info
+import io.sellmair.okay.OkCoroutineDescriptor.Verbosity.Info
 import io.sellmair.okay.io.OkPath
 import io.sellmair.okay.dependency.compileDependenciesClosure
 import io.sellmair.okay.dependency.runtimeDependenciesClosure
@@ -21,7 +21,7 @@ fun OkContext.mavenResolveRuntimeDependencies(): OkAsync<List<OkPath>> {
 private fun OkContext.mavenResolveRuntimeDependencies(scope: MavenResolveDependenciesScope): OkAsync<List<OkPath>> {
     val mavenLibrariesDirectory = path(".okay/libs/maven").system()
     return launchCachedCoroutine(
-        describeTask("mavenResolve${scope}Dependencies", verbosity = Info),
+        describeCoroutine("mavenResolve${scope}Dependencies", verbosity = Info),
         input = OkInput.none(),
         output = OkOutput.none()
     ) {

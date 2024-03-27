@@ -16,34 +16,24 @@ private val cacheDirectory = Path(".okay/cache")
 private val cacheEntriesDirectory = cacheDirectory.resolve("entry")
 private val cacheBlobsDirectory = cacheDirectory.resolve("blobs")
 
-fun readCacheEntry(key: OkHash): OkCacheEntry<*>? {
+internal fun readCacheEntry(key: OkHash): OkInputCacheRecord? {
     val file = cacheEntriesDirectory.resolve(key.value)
     if (!file.isRegularFile()) return null
 
     return ObjectInputStream(file.inputStream().buffered()).use { stream ->
-        stream.readObject() as? OkCacheEntry<*>
+        stream.readObject() as? OkOutputCacheRecord<*>
     }
 }
 
-private fun writeCacheEntry(key: OkHash, value: OkCacheEntry<*>): Path {
-    cacheEntriesDirectory.createDirectories()
-
-    val file = cacheEntriesDirectory.resolve(key.value)
-    ObjectOutputStream(file.outputStream().buffered()).use { stream ->
-        stream.writeObject(value)
-    }
-
-    return file
-}
 
 suspend fun <T> storeCache(
     key: OkHash,
     value: T,
-    taskDescriptor: OkTaskDescriptor<T>,
+    taskDescriptor: OkCoroutineDescriptor<T>,
     input: OkInput,
     output: OkOutput,
     dependencies: List<OkHash>
-): OkCacheEntry<T> {
+): OkOutputCacheRecord<T> {
     cacheBlobsDirectory.createDirectories()
     return withContext(Dispatchers.IO) {
         val outputHash = async { output.cacheKey() }
@@ -62,29 +52,43 @@ suspend fun <T> storeCache(
             .mapNotNull { it.await() }
             .toMap()
 
-        val entry = OkCacheEntry(
+        val entry = OkOutputCacheRecord(
             key = key,
             value = value,
-            taskDescriptor = taskDescriptor,
+            descriptor = taskDescriptor,
             input = input,
             output = output,
             outputHash = outputHash.await(),
             dependencies = dependencies,
-            files = files
+            outputState = files
         )
 
-        writeCacheEntry(key, entry)
+        storeCacheRecord(entry)
         entry
     }
 }
 
-suspend fun restoreFilesFromCache(entry: OkCacheEntry<*>) {
+/**
+ * ⚠️Only stores the cache record!!! Consider using [storeCache] instead?
+ */
+internal fun storeCacheRecord(value: OkInputCacheRecord): Path {
+    cacheEntriesDirectory.createDirectories()
+
+    val file = cacheEntriesDirectory.resolve(value.key.value)
+    ObjectOutputStream(file.outputStream().buffered()).use { stream ->
+        stream.writeObject(value)
+    }
+
+    return file
+}
+
+suspend fun restoreFilesFromCache(entry: OkOutputCacheRecord<*>) {
     withContext(Dispatchers.IO) {
         entry.output.withClosure { output -> if (output is OkCompositeOutput) output.values else emptyList() }
             .filterIsInstance<OkOutputDirectory>()
             .forEach { outputDirectory -> outputDirectory.path.toPath().deleteRecursively() }
 
-        entry.files.map { (path, hash) ->
+        entry.outputState.map { (path, hash) ->
             async {
                 val blob = cacheBlobsDirectory.resolve(hash.value)
                 if (blob.isRegularFile()) {
