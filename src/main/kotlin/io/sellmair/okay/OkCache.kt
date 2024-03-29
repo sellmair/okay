@@ -84,16 +84,16 @@ internal fun storeCacheRecord(value: OkInputCacheRecord): Path {
 
 suspend fun restoreFilesFromCache(entry: OkOutputCacheRecord<*>) {
     withContext(Dispatchers.IO) {
-        entry.output.withClosure { output -> if (output is OkCompositeOutput) output.values else emptyList() }
+        entry.output.withClosure { output -> if (output is OkOutputs) output.values else emptyList() }
             .filterIsInstance<OkOutputDirectory>()
-            .forEach { outputDirectory -> outputDirectory.path.toPath().deleteRecursively() }
+            .forEach { outputDirectory -> outputDirectory.path.system().deleteRecursively() }
 
         entry.outputState.map { (path, hash) ->
             async {
                 val blob = cacheBlobsDirectory.resolve(hash.value)
                 if (blob.isRegularFile()) {
-                    path.toPath().createParentDirectories()
-                    blob.copyTo(path.toPath(), true)
+                    path.system().createParentDirectories()
+                    blob.copyTo(path.system(), true)
                 }
             }
         }.map { it.await() }
@@ -103,10 +103,10 @@ suspend fun restoreFilesFromCache(entry: OkOutputCacheRecord<*>) {
 
 fun OkOutput.cacheKey(): OkHash {
     return when (this) {
-        is OkCompositeOutput -> hash(values.map { it.cacheKey() })
+        is OkOutputs -> hash(values.map { it.cacheKey() })
         is OkEmptyOutput -> hash("")
-        is OkOutputDirectory -> path.toPath().directoryCacheKey()
-        is OkOutputFile -> path.toPath().regularFileCacheKey()
+        is OkOutputDirectory -> path.system().directoryCacheKey()
+        is OkOutputFile -> path.system().regularFileCacheKey()
     }
 }
 

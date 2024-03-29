@@ -1,4 +1,4 @@
-package io.sellmair.okay
+ package io.sellmair.okay
 
 import io.sellmair.okay.io.OkPath
 import io.sellmair.okay.io.toOk
@@ -11,13 +11,13 @@ abstract class OkInput : Serializable {
     abstract fun currentState(): OkHash
 
     companion object {
-        fun none(): OkInput = OkCompositeInput(emptyList())
+        fun none(): OkInput = OkInputs(emptyList())
     }
 }
 
-fun OkInput(vararg inputs: OkInput) = OkCompositeInput(inputs.toList())
+fun OkInput(vararg inputs: OkInput) = OkInputs(inputs.toList())
 
-data class OkFileInput(val path: OkPath) : OkInput() {
+data class OkInputFile(val path: OkPath) : OkInput() {
     constructor(path: Path) : this(path.toOk())
 
     override fun currentState(): OkHash {
@@ -27,13 +27,13 @@ data class OkFileInput(val path: OkPath) : OkInput() {
     }
 }
 
-data class OkStringInput(val value: String) : OkInput() {
+data class OkInputString(val value: String) : OkInput() {
     override fun currentState(): OkHash {
         return hash(value)
     }
 }
 
-data class OkCompositeInput(val values: List<OkInput>) : OkInput() {
+data class OkInputs(val values: List<OkInput>) : OkInput() {
     override fun currentState(): OkHash {
         return hash {
             values.forEach { value ->
@@ -44,18 +44,18 @@ data class OkCompositeInput(val values: List<OkInput>) : OkInput() {
 }
 
 
-operator fun OkInput.plus(other: OkInput): OkCompositeInput {
-    if (this is OkCompositeInput && other is OkCompositeInput) {
-        return OkCompositeInput(this.values + other.values)
+operator fun OkInput.plus(other: OkInput): OkInputs {
+    if (this is OkInputs && other is OkInputs) {
+        return OkInputs(this.values + other.values)
     }
 
-    if (this is OkCompositeInput) {
-        return OkCompositeInput(this.values + other)
+    if (this is OkInputs) {
+        return OkInputs(this.values + other)
     }
 
-    if (other is OkCompositeInput) {
-        return OkCompositeInput(listOf(this) + other.values)
+    if (other is OkInputs) {
+        return OkInputs(listOf(this) + other.values)
     }
 
-    return OkCompositeInput(listOf(this, other))
+    return OkInputs(listOf(this, other))
 }

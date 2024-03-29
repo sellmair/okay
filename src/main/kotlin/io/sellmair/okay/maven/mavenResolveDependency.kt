@@ -22,9 +22,9 @@ suspend fun OkContext.mavenResolveDependency(
     return cachedCoroutine(
         describeRootCoroutine("resolve: '$group:$artifact:$version'"),
         input = OkInput(
-            OkStringInput(group),
-            OkStringInput(artifact),
-            OkStringInput(version)
+            OkInputString(group),
+            OkInputString(artifact),
+            OkInputString(version)
         ),
         output = OkOutputFile(outputFile)
     ) {

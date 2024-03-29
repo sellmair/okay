@@ -32,9 +32,9 @@ suspend fun OkContext.kotlinCompile(
 ): OkPath {
     return cachedCoroutine(
         describeCoroutine("kotlinCompile", verbosity = Info),
-        input = OkCompositeInput(sources.map { OkFileInput(it) }) +
-                OkCompositeInput(dependencies.map { OkFileInput(it) }),
-        output = OkCompositeOutput(listOf(OkOutputDirectory(outputDirectory)))
+        input = OkInputs(sources.map { OkInputFile(it) }) +
+                OkInputs(dependencies.map { OkInputFile(it) }),
+        output = OkOutputs(listOf(OkOutputDirectory(outputDirectory)))
     ) {
         log("Compiling Kotlin")
 

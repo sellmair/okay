@@ -15,7 +15,7 @@ suspend fun OkContext.zipFiles(
 ): OkPath {
     return cachedCoroutine(
         descriptor = describeCoroutine("zip", verbosity = OkCoroutineDescriptor.Verbosity.Debug),
-        input = OkCompositeInput(files.values.map { OkFileInput(it) }),
+        input = OkInputs(files.values.map { OkInputFile(it) }),
         output = OkOutputFile(zipFile)
     ) {
         zipFile.system().createParentDirectories()

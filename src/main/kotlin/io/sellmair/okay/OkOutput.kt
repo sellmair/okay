@@ -9,7 +9,7 @@ import kotlin.io.path.walk
 
 sealed class OkOutput : Serializable {
     companion object {
-        fun none(): OkOutput = OkCompositeOutput(emptyList())
+        fun none(): OkOutput = OkOutputs(emptyList())
     }
 }
 
@@ -28,19 +28,19 @@ data class OkOutputDirectory(val path: OkPath) : OkOutput() {
 fun OkOutput(vararg output: OkOutput): OkOutput {
     val outputs = output.toList()
     if (outputs.isEmpty()) return OkEmptyOutput
-    return OkCompositeOutput(outputs)
+    return OkOutputs(outputs)
 }
 
-data class OkCompositeOutput(val values: List<OkOutput>) : OkOutput()
+data class OkOutputs(val values: List<OkOutput>) : OkOutput()
 
 @OptIn(ExperimentalPathApi::class)
 fun OkOutput.walkFiles(): Sequence<Path> {
     return sequence {
         when (this@walkFiles) {
-            is OkCompositeOutput -> yieldAll(values.flatMap { it.walkFiles() })
+            is OkOutputs -> yieldAll(values.flatMap { it.walkFiles() })
             is OkEmptyOutput -> Unit
-            is OkOutputDirectory -> yieldAll(path.toPath().walk())
-            is OkOutputFile -> yield(path.toPath())
+            is OkOutputDirectory -> yieldAll(path.system().walk())
+            is OkOutputFile -> yield(path.system())
         }
     }
 }

@@ -1,5 +1,6 @@
 package io.sellmair.okay.io
 
+import io.sellmair.okay.OkInputFile
 import java.io.Serializable
 import java.nio.file.Path
 import kotlin.io.path.Path
@@ -19,7 +20,6 @@ value class OkPath(val path: String) : Serializable {
         return Path(path).resolve(other.path).toOk()
     }
 
-    fun toPath() = Path(path)
     fun system(): Path = Path(path)
 }
 

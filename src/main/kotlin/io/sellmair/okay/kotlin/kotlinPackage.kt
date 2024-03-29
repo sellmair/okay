@@ -47,8 +47,8 @@ suspend fun OkContext.packageMavenRuntimeDependencies(packageDir: OkPath): List<
 
     return cachedCoroutine(
         describeCoroutine("copyMavenRuntimeDependencies"),
-        input = OkCompositeInput(runtimeDependencies.map { OkFileInput(it) }),
-        output = OkCompositeOutput(destinationFiles.map { OkOutputFile(it) }),
+        input = OkInputs(runtimeDependencies.map { OkInputFile(it) }),
+        output = OkOutputs(destinationFiles.map { OkOutputFile(it) }),
     ) {
         runtimeDependencies.forEach { file ->
             val targetFile = packageDir.system().resolve("libs/${file.system().name}")
