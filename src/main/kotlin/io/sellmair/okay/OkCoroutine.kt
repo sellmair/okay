@@ -9,6 +9,11 @@ internal class OkCoroutine<T>(
     val value: Deferred<T>
 )
 
+fun <T> OkContext.async(body: suspend OkContext.() -> T): OkAsync<T> {
+    val deferred = cs.async { body() }
+    return OkAsync { deferred.await() }
+}
+
 /**
  * Launches a coroutine with the given [body]:
  * Unlike [launchCachedCoroutine], this method will not store the output of the calculation of [body] in

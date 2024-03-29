@@ -16,13 +16,13 @@ import org.jetbrains.kotlin.incremental.destinationAsFile
 import java.nio.file.Path
 import kotlin.io.path.*
 
-suspend fun OkContext.kotlinCompile(): OkAsync<OkPath> {
+fun OkContext.kotlinCompile(): OkAsync<OkPath> = async {
     val mainSourcesDir = modulePath("src").system()
     val kotlinSources = mainSourcesDir.walk().filter { it.extension == "kt" }.toList()
     val dependencies = mavenResolveCompileDependencies().await().map { it.system() } +
             kotlinCompileDependencies().await().map { it.system() }
 
-    return kotlinCompile(kotlinSources, dependencies, modulePath("build/main/classes").system())
+    kotlinCompile(kotlinSources, dependencies, modulePath("build/main/classes").system()).await()
 }
 
 fun OkContext.kotlinCompile(

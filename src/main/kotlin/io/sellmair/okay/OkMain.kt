@@ -3,6 +3,8 @@
 package io.sellmair.okay
 
 import io.sellmair.okay.kotlin.kotlinCompile
+import io.sellmair.okay.kotlin.kotlinJar
+import io.sellmair.okay.kotlin.kotlinPackage
 import io.sellmair.okay.kotlin.kotlinRun
 import io.sellmair.okay.utils.log
 import java.util.ServiceLoader
@@ -27,8 +29,16 @@ fun main(args: Array<String>) {
             kotlinCompile().await()
         }
 
-        if(args.firstOrNull() == "run") {
-            kotlinRun(args.getOrNull(1), args.drop(2))
+        if (args.firstOrNull() == "run") {
+            kotlinRun(args.getOrNull(1), args.drop(2)).await()
+        }
+
+        if (args.firstOrNull() == "jar") {
+            kotlinJar().await()
+        }
+
+        if (args.firstOrNull() == "package" || args.firstOrNull() == "pkg") {
+            kotlinPackage()
         }
 
         if (args.singleOrNull() == "clean") {

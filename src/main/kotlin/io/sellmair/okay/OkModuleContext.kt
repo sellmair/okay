@@ -2,6 +2,8 @@ package io.sellmair.okay
 
 import io.sellmair.okay.io.OkPath
 import kotlin.coroutines.CoroutineContext
+import kotlin.io.path.absolutePathString
+import kotlin.io.path.name
 
 
 fun OkContext.path(value: String) = OkPath(value)
@@ -11,6 +13,9 @@ fun OkContext.rootModulePath() = OkPath("")
 fun OkContext.modulePath(): OkPath {
     return cs.coroutineContext[OkModuleContext]?.path ?: OkPath("")
 }
+
+fun OkContext.moduleName() = modulePath().system().toAbsolutePath()
+    .normalize().name
 
 fun OkContext.modulePath(path: String): OkPath {
     return modulePath().resolve(path)

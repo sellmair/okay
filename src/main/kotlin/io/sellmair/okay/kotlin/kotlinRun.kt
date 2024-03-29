@@ -1,6 +1,7 @@
 package io.sellmair.okay.kotlin
 
 import io.sellmair.okay.OkContext
+import io.sellmair.okay.async
 import io.sellmair.okay.maven.mavenResolveRuntimeDependencies
 import io.sellmair.okay.modulePath
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -12,7 +13,7 @@ import java.util.*
 import kotlin.io.path.inputStream
 import kotlin.io.path.isRegularFile
 
-suspend fun OkContext.kotlinRun(target: String? = null, arguments: List<String>) {
+fun OkContext.kotlinRun(target: String? = null, arguments: List<String>) = async{
     val mavenDependencies = mavenResolveRuntimeDependencies()
     val moduleDependencies = kotlinCompileRuntimeDependencies()
     val compiled = kotlinCompile().await()

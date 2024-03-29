@@ -5,11 +5,7 @@ import io.sellmair.okay.dependency.compileDependenciesClosure
 import io.sellmair.okay.io.OkPath
 
 fun OkContext.kotlinCompileDependencies(): OkAsync<List<OkPath>> {
-    return launchCachedCoroutine(
-        describeCoroutine("kotlinCompileDependencies"),
-        input = OkInput.none(),
-        output = OkOutput.none()
-    ) {
+    return async {
         val dependencyModulesClosure = compileDependenciesClosure().await()
             .mapNotNull { it.dependencyModulePath() }
 
