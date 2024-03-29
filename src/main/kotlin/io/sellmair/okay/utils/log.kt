@@ -13,9 +13,9 @@ internal const val ansiYellow = "\u001B[33m"
 
 suspend fun log(value: String) {
     val stack = currentCoroutineContext()[OkCoroutineStack]?.values.orEmpty()
-        .filter { it.verbosity >= OkCoroutineDescriptor.Verbosity.Info }
-        .map { "$ansiPurple${it.title}$ansiReset" }
-        .ifEmpty { return }
+        .lastOrNull { it.verbosity >= OkCoroutineDescriptor.Verbosity.Info }
+        ?.let { "$ansiPurple${it.title}$ansiReset" }
+        ?: return
 
     val modulePath = currentCoroutineContext()[OkModuleContext]?.path?.path ?: "<root>"
 
@@ -26,7 +26,7 @@ suspend fun log(value: String) {
             }
 
             append("[")
-            append(stack.joinToString("/"))
+            append(stack)
             append("]")
             append(": $value")
         }

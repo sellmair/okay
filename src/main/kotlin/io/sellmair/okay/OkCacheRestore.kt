@@ -24,13 +24,13 @@ internal suspend fun tryRestoreCacheUnchecked(cacheKey: OkHash): CacheResult {
 /**
  * Will only restore the cache from the key, if the inputs were unchanged.
  */
-private suspend fun tryRestoreCacheChecked(cacheKey: OkHash): CacheResult? {
-    val entry = readCacheEntry(cacheKey) ?: return null
+private suspend fun tryRestoreCacheChecked(cacheKey: OkHash): CacheResult {
+    val entry = readCacheEntry(cacheKey) ?: return CacheMiss
     return withOkStack(entry.descriptor) {
         val inputState = entry.input.cacheKey()
         if (inputState != cacheKey) {
             log("Cache miss. Expected: ($cacheKey), found: ($inputState)")
-            return@withOkStack null
+            return@withOkStack CacheMiss
         }
         tryRestoreCache(entry)
     }
@@ -41,18 +41,20 @@ private suspend fun tryRestoreCache(
 ): CacheResult {
     /* Launch & await restore of dependencies */
     cacheEntry.dependencies.map { dependencyCacheKey ->
-        tryRestoreCacheChecked(dependencyCacheKey) ?: run {
-            return CacheMiss
-        }
+        tryRestoreCacheChecked(dependencyCacheKey)
     }
 
     if (cacheEntry is OkOutputCacheRecord<*>) {
         val outputCacheKey = cacheEntry.output.cacheKey()
         if (outputCacheKey == cacheEntry.outputHash) {
-            log("${ansiGreen}UP-TO-DATE${ansiReset} (${cacheEntry.key}) -> ($outputCacheKey)")
+            if (cacheEntry.descriptor.verbosity >= OkCoroutineDescriptor.Verbosity.Info) {
+                log("${ansiGreen}UP-TO-DATE${ansiReset} (${cacheEntry.key}) -> ($outputCacheKey)")
+            }
         } else {
             restoreFilesFromCache(cacheEntry)
-            log("Cache Restored (${cacheEntry.key}) -> ($outputCacheKey)")
+            if (cacheEntry.descriptor.verbosity >= OkCoroutineDescriptor.Verbosity.Info) {
+                log("Cache Restored (${cacheEntry.key}) -> ($outputCacheKey)")
+            }
         }
     }
     return CacheHit(cacheEntry)

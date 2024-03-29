@@ -1,9 +1,7 @@
 package io.sellmair.okay.kotlin
 
-import io.sellmair.okay.OkContext
-import io.sellmair.okay.async
+import io.sellmair.okay.*
 import io.sellmair.okay.maven.mavenResolveRuntimeDependencies
-import io.sellmair.okay.modulePath
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
 import org.jetbrains.kotlin.konan.file.use
@@ -13,14 +11,13 @@ import java.util.*
 import kotlin.io.path.inputStream
 import kotlin.io.path.isRegularFile
 
+
 suspend fun OkContext.kotlinRun(target: String? = null, arguments: List<String>) {
     val mavenDependencies = async { mavenResolveRuntimeDependencies() }
     val moduleDependencies = async { kotlinCompileRuntimeDependencies() }
     val compiled = async { kotlinCompile() }
 
-    val runConfigurationFile = modulePath("okay.run.json").system()
-    if (!runConfigurationFile.isRegularFile()) error("Missing '$runConfigurationFile'")
-    val options = parseKotlinRunOptions(runConfigurationFile, target)
+    val options = parseKotlinRunOptions(target)
     val className = options.className
     val functionName = options.functionName ?: "main"
 
@@ -58,26 +55,34 @@ suspend fun OkContext.kotlinRun(target: String? = null, arguments: List<String>)
     }
 }
 
-private class KotlinRunOptions(
+internal class KotlinRunOptions(
     val className: String,
     val functionName: String?
 )
 
 @OptIn(ExperimentalSerializationApi::class)
-private fun parseKotlinRunOptions(path: Path, target: String?): KotlinRunOptions {
-    val parsed = path.inputStream().buffered().use { inputStream ->
-        Json.decodeFromStream<JsonElement>(inputStream)
+internal suspend fun OkContext.parseKotlinRunOptions(target: String? = null): KotlinRunOptions {
+    val runConfigurationFile = modulePath("okay.run.json")
+    if (!runConfigurationFile.system().isRegularFile()) error("Missing '$runConfigurationFile'")
+
+    return memoizedCoroutine(
+        describeCoroutine("parseKotlinRunOptions"),
+        input = OkInputFile(runConfigurationFile)
+    ) coroutine@{
+        val parsed = runConfigurationFile.system().inputStream().buffered().use { inputStream ->
+            Json.decodeFromStream<JsonElement>(inputStream)
+        }
+
+        if (target == null && parsed is JsonObject) {
+            return@coroutine parsed.toKotlinRunOptions()
+        }
+
+        val jsonObjectForRunTarget = parsed.jsonArray.filterIsInstance<JsonObject>()
+            .find { jsonObject -> (jsonObject["name"] as? JsonPrimitive)?.contentOrNull == target }
+            ?: error("Missing run target '$target' in $runConfigurationFile")
+
+        jsonObjectForRunTarget.toKotlinRunOptions()
     }
-
-    if (target == null && parsed is JsonObject) {
-        return parsed.toKotlinRunOptions()
-    }
-
-    val jsonObjectForRunTarget = parsed.jsonArray.filterIsInstance<JsonObject>()
-        .find { jsonObject -> (jsonObject["name"] as? JsonPrimitive)?.contentOrNull == target }
-        ?: error("Missing run target '$target' in $path")
-
-    return jsonObjectForRunTarget.toKotlinRunOptions()
 }
 
 private fun JsonObject.toKotlinRunOptions(): KotlinRunOptions {

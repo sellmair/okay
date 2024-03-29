@@ -3,6 +3,9 @@ package io.sellmair.okay.maven
 import io.sellmair.okay.*
 import io.sellmair.okay.io.OkPath
 import io.sellmair.okay.io.toOk
+import io.sellmair.okay.utils.ansiGreen
+import io.sellmair.okay.utils.ansiPurple
+import io.sellmair.okay.utils.ansiReset
 import io.sellmair.okay.utils.log
 import java.net.URI
 import java.nio.file.Path
@@ -28,7 +31,7 @@ suspend fun OkContext.mavenResolveDependency(
         ),
         output = OkOutputFile(outputFile)
     ) {
-        log("Downloading $artifact:$version")
+        log("Downloading '$ansiGreen$mavenCoordinates$ansiReset'")
 
         outputFile.createParentDirectories()
 

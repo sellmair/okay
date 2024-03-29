@@ -1,7 +1,8 @@
- package io.sellmair.okay
+package io.sellmair.okay
 
 import io.sellmair.okay.io.OkPath
 import io.sellmair.okay.io.toOk
+import org.jetbrains.kotlin.it.unimi.dsi.fastutil.Hash
 import java.io.Serializable
 import java.nio.file.Path
 import kotlin.io.path.isDirectory
@@ -27,10 +28,13 @@ data class OkInputFile(val path: OkPath) : OkInput() {
     }
 }
 
-data class OkInputString(val value: String) : OkInput() {
+fun OkInputString(value: String) = OkHashInput(hash(value))
+
+data class OkHashInput(val hash: OkHash) : OkInput() {
     override fun currentState(): OkHash {
-        return hash(value)
+        return hash
     }
+
 }
 
 data class OkInputs(val values: List<OkInput>) : OkInput() {

@@ -1,5 +1,6 @@
 package io.sellmair.okay
 
+import io.sellmair.okay.io.OkPath
 import java.io.Serializable
 import java.security.MessageDigest
 import kotlin.io.encoding.Base64
@@ -23,6 +24,7 @@ interface HashBuilder {
     fun push(value: ByteArray, offset: Int, length: Int)
     fun push(value: Byte)
     fun push(value: OkHash)
+    fun push(value: OkPath)
 }
 
 fun hash(value: ByteArray): OkHash {
@@ -66,6 +68,10 @@ private class HashBuilderImpl(
 
     override fun push(value: OkHash) {
         push(value.value)
+    }
+
+    override fun push(value: OkPath) {
+        push(value.path)
     }
 
     fun build(): OkHash {

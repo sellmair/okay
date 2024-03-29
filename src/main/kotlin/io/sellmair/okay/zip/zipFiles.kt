@@ -9,13 +9,28 @@ import kotlin.io.path.createParentDirectories
 import kotlin.io.path.isDirectory
 import kotlin.io.path.outputStream
 
+
 suspend fun OkContext.zipFiles(
     zipFile: OkPath,
-    files: Map<String, OkPath>
+    files: Map<String, OkPath> = emptyMap(),
+    data: Map<String, ByteArray> = emptyMap(),
 ): OkPath {
+    /* Hash that will change if the layout of the files or the input byteArrays would change */
+    val layoutInputHash = hash {
+        files.forEach { (name, path) ->
+            push(name)
+            push(path)
+        }
+
+        data.forEach { (name, value) ->
+            push(name)
+            push(value)
+        }
+    }
+
     return cachedCoroutine(
         descriptor = describeCoroutine("zip", verbosity = OkCoroutineDescriptor.Verbosity.Debug),
-        input = OkInputs(files.values.map { OkInputFile(it) }),
+        input = OkInputs(files.values.map { OkInputFile(it) }) + OkHashInput(layoutInputHash),
         output = OkOutputFile(zipFile)
     ) {
         zipFile.system().createParentDirectories()
@@ -26,6 +41,13 @@ suspend fun OkContext.zipFiles(
 
                 out.putNextEntry(ZipEntry(sanitizedName))
                 Files.copy(file.system(), out)
+                out.closeEntry()
+            }
+
+            data.forEach { (name, value) ->
+                out.putNextEntry(ZipEntry(name))
+                out.write(value)
+                out.closeEntry()
             }
         }
         zipFile

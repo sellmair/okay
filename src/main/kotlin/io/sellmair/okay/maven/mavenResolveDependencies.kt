@@ -2,9 +2,10 @@ package io.sellmair.okay.maven
 
 import io.sellmair.okay.*
 import io.sellmair.okay.OkCoroutineDescriptor.Verbosity.Info
-import io.sellmair.okay.io.OkPath
 import io.sellmair.okay.dependency.compileDependenciesClosure
 import io.sellmair.okay.dependency.runtimeDependenciesClosure
+import io.sellmair.okay.io.OkPath
+import io.sellmair.okay.utils.log
 
 private enum class MavenResolveDependenciesScope {
     Compile, Runtime
@@ -29,7 +30,7 @@ private suspend fun OkContext.mavenResolveRuntimeDependencies(scope: MavenResolv
             .mapNotNull { declaration -> parseMavenCoordinates(declaration.value) }
 
         val resolvedDependencies = parsedCoordinates.map { coordinates ->
-            async {  mavenResolveDependency(mavenLibrariesDirectory, coordinates) }
+            async { mavenResolveDependency(mavenLibrariesDirectory, coordinates) }
         }.awaitAll()
 
         resolvedDependencies

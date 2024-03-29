@@ -10,7 +10,9 @@ import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.relativeTo
 import kotlin.io.path.walk
 
-suspend fun OkContext.kotlinJar(): OkPath {
+suspend fun OkContext.kotlinJar(
+    jarManifestAttributes: Map<String, OkAsync<String>> = emptyMap(),
+): OkPath {
     val outputDir = kotlinCompile()
 
     val files = outputDir.system().walk().associate { file ->
@@ -18,7 +20,16 @@ suspend fun OkContext.kotlinJar(): OkPath {
         relativePath.toString() to file.toOk()
     }
 
+    val manifest = buildString {
+        appendLine("Manifest-Version: 1.0")
+        jarManifestAttributes.forEach { (key, value) ->
+            appendLine("$key: ${value.await()}")
+        }
+    }
+
     return zipFiles(
-        modulePath("build/main/jar/${moduleName()}.jar"), files
+        modulePath("build/main/jar/${moduleName()}.jar"),
+        data = mapOf("META-INF/MANIFEST.MF" to manifest.encodeToByteArray()),
+        files = files,
     )
 }
