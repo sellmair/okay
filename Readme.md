@@ -43,6 +43,23 @@ cd testProject
 okay run echo firstArgument secondArgument thirdArgument="is a charm"
 ```
 
+### Build/Package an executable distribution
+```shell
+cd testProject
+okay package
+```
+
+Execute it:
+```shell
+java -jar testProject/build/main/package/testProject.jar
+```
+
+```shell
+cd testProject
+okay run echo firstArgument secondArgument thirdArgument="is a charm"
+```
+
+
 ### Clean the test project
 
 ```shell
