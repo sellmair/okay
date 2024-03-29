@@ -3,8 +3,8 @@ package io.sellmair.okay.io
 import io.sellmair.okay.*
 import kotlin.io.path.copyTo
 
-fun OkContext.copyFile(from: OkPath, to: OkPath): OkAsync<OkPath> {
-    return launchCachedCoroutine(
+suspend fun OkContext.copyFile(from: OkPath, to: OkPath): OkPath {
+    return cachedCoroutine(
         descriptor = describeCoroutine("copyFile"),
         input = OkFileInput(from),
         output = OkOutputFile(to)

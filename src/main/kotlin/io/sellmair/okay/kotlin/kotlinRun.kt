@@ -13,10 +13,10 @@ import java.util.*
 import kotlin.io.path.inputStream
 import kotlin.io.path.isRegularFile
 
-fun OkContext.kotlinRun(target: String? = null, arguments: List<String>) = async{
-    val mavenDependencies = mavenResolveRuntimeDependencies()
-    val moduleDependencies = kotlinCompileRuntimeDependencies()
-    val compiled = kotlinCompile().await()
+suspend fun OkContext.kotlinRun(target: String? = null, arguments: List<String>) {
+    val mavenDependencies = async { mavenResolveRuntimeDependencies() }
+    val moduleDependencies = async { kotlinCompileRuntimeDependencies() }
+    val compiled = async { kotlinCompile() }
 
     val runConfigurationFile = modulePath("okay.run.json").system()
     if (!runConfigurationFile.isRegularFile()) error("Missing '$runConfigurationFile'")
@@ -28,7 +28,7 @@ fun OkContext.kotlinRun(target: String? = null, arguments: List<String>) = async
     val loader = URLClassLoader.newInstance(
         mavenDependencies.await().map { it.system().toUri().toURL() }.toTypedArray() +
                 moduleDependencies.await().map { it.system().toUri().toURL() } +
-                compiled.system().toUri().toURL()
+                compiled.await().system().toUri().toURL()
     )
 
     println(

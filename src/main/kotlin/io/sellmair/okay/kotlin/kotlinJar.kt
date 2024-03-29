@@ -10,15 +10,15 @@ import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.relativeTo
 import kotlin.io.path.walk
 
-fun OkContext.kotlinJar(): OkAsync<OkPath> = async {
-    val outputDir = kotlinCompile().await()
+suspend fun OkContext.kotlinJar(): OkPath {
+    val outputDir = kotlinCompile()
 
     val files = outputDir.system().walk().associate { file ->
         val relativePath = file.relativeTo(outputDir.system())
         relativePath.toString() to file.toOk()
     }
 
-    zipFiles(
+    return zipFiles(
         modulePath("build/main/jar/${moduleName()}.jar"), files
-    ).await()
+    )
 }

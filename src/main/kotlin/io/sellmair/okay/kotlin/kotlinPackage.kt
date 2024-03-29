@@ -10,52 +10,52 @@ import kotlin.io.path.copyTo
 import kotlin.io.path.createParentDirectories
 import kotlin.io.path.name
 
-fun OkContext.kotlinPackage() {
+suspend fun OkContext.kotlinPackage() {
     val packageDir = modulePath("build/main/package")
-    val packagedMavenDependencies = packageMavenRuntimeDependenciesAsync(packageDir)
-    val packagedModuleDependencies = packageModuleDependenciesAsync(packageDir)
+    async { packageMavenRuntimeDependencies(packageDir) }
+    async { packageModuleDependencies(packageDir) }
     async {
-        val jarFile = kotlinJar().await()
+        val jarFile = kotlinJar()
         copyFile(jarFile, packageDir.resolve(jarFile.system().name))
     }
 }
 
-fun OkContext.packageModuleDependenciesAsync(packageDir: OkPath): OkAsync<List<OkPath>> {
-    return async {
-        val dependencyModules = runtimeDependenciesClosure().await().mapNotNull { it.dependencyModulePath() }
-        val dependencyModuleJars = dependencyModules.map { module -> withModule(module) { kotlinJar() } }
-        dependencyModuleJars.map { dependencyModuleJar ->
-            async {
-                val fromFile = dependencyModuleJar.await()
-                val targetFile = packageDir.resolve("libs").resolve(fromFile.system().name)
-                targetFile.system().createParentDirectories()
-                copyFile(fromFile, targetFile).await()
-            }
-        }.map { it.await() }
+suspend fun OkContext.packageModuleDependencies(packageDir: OkPath): List<OkPath> {
+    val dependencyModules = runtimeDependenciesClosure().mapNotNull { it.dependencyModulePath() }
+    val dependencyModuleJars = dependencyModules.map { module ->
+        withModule(module) {
+            async { kotlinJar() }
+        }
     }
+
+    return dependencyModuleJars.map { dependencyModuleJar ->
+        async {
+            val fromFile = dependencyModuleJar.await()
+            val targetFile = packageDir.resolve("libs").resolve(fromFile.system().name)
+            targetFile.system().createParentDirectories()
+            copyFile(fromFile, targetFile)
+        }
+    }.awaitAll()
 }
 
 /* Copy maven dependencies into package/libs */
-fun OkContext.packageMavenRuntimeDependenciesAsync(packageDir: OkPath): OkAsync<List<OkPath>> {
-    return async {
-        val runtimeDependencies = mavenResolveRuntimeDependencies().await()
-        val destinationFiles = runtimeDependencies.map { file ->
-            packageDir.system().resolve("libs/${file.system().name}")
-        }.map { it.toOk() }
+suspend fun OkContext.packageMavenRuntimeDependencies(packageDir: OkPath): List<OkPath> {
+    val runtimeDependencies = mavenResolveRuntimeDependencies()
+    val destinationFiles = runtimeDependencies.map { file ->
+        packageDir.system().resolve("libs/${file.system().name}")
+    }.map { it.toOk() }
 
-        launchCachedCoroutine(
-            describeCoroutine("copyMavenRuntimeDependencies"),
-            input = OkCompositeInput(runtimeDependencies.map { OkFileInput(it) }),
-            output = OkCompositeOutput(destinationFiles.map { OkOutputFile(it) }),
-        ) {
+    return cachedCoroutine(
+        describeCoroutine("copyMavenRuntimeDependencies"),
+        input = OkCompositeInput(runtimeDependencies.map { OkFileInput(it) }),
+        output = OkCompositeOutput(destinationFiles.map { OkOutputFile(it) }),
+    ) {
+        runtimeDependencies.forEach { file ->
+            val targetFile = packageDir.system().resolve("libs/${file.system().name}")
+            targetFile.createParentDirectories()
+            file.system().copyTo(targetFile, true)
+        }
 
-            runtimeDependencies.forEach { file ->
-                val targetFile = packageDir.system().resolve("libs/${file.system().name}")
-                targetFile.createParentDirectories()
-                file.system().copyTo(targetFile, true)
-            }
-
-            destinationFiles
-        }.await()
+        destinationFiles
     }
 }

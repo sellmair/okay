@@ -9,11 +9,11 @@ import kotlin.io.path.createParentDirectories
 import kotlin.io.path.isDirectory
 import kotlin.io.path.outputStream
 
-fun OkContext.zipFiles(
+suspend fun OkContext.zipFiles(
     zipFile: OkPath,
     files: Map<String, OkPath>
-): OkAsync<OkPath> {
-    return launchCachedCoroutine(
+): OkPath {
+    return cachedCoroutine(
         descriptor = describeCoroutine("zip", verbosity = OkCoroutineDescriptor.Verbosity.Debug),
         input = OkCompositeInput(files.values.map { OkFileInput(it) }),
         output = OkOutputFile(zipFile)

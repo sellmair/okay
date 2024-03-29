@@ -9,17 +9,17 @@ import java.nio.file.Path
 import kotlin.io.path.createParentDirectories
 import kotlin.io.path.outputStream
 
-fun OkContext.mavenResolveDependency(
+suspend fun OkContext.mavenResolveDependency(
     outputDirectory: Path,
     mavenCoordinates: MavenCoordinates,
-): OkAsync<OkPath> {
+): OkPath {
     val group = mavenCoordinates.group
     val artifact = mavenCoordinates.artifact
     val version = mavenCoordinates.version
 
     val outputFile = outputDirectory.resolve("$group-$artifact-$version.jar")
 
-    return launchCachedCoroutine(
+    return cachedCoroutine(
         describeRootCoroutine("resolve: '$group:$artifact:$version'"),
         input = OkInput(
             OkStringInput(group),

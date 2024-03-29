@@ -26,15 +26,15 @@ fun main(args: Array<String>) {
 
     ok {
         if (args.singleOrNull() == "build") {
-            kotlinCompile().await()
+            kotlinCompile()
         }
 
         if (args.firstOrNull() == "run") {
-            kotlinRun(args.getOrNull(1), args.drop(2)).await()
+            kotlinRun(args.getOrNull(1), args.drop(2))
         }
 
         if (args.firstOrNull() == "jar") {
-            kotlinJar().await()
+            kotlinJar()
         }
 
         if (args.firstOrNull() == "package" || args.firstOrNull() == "pkg") {

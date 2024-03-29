@@ -10,33 +10,33 @@ private enum class MavenResolveDependenciesScope {
     Compile, Runtime
 }
 
-fun OkContext.mavenResolveCompileDependencies(): OkAsync<List<OkPath>> {
+suspend fun OkContext.mavenResolveCompileDependencies(): List<OkPath> {
     return mavenResolveRuntimeDependencies(MavenResolveDependenciesScope.Compile)
 }
 
-fun OkContext.mavenResolveRuntimeDependencies(): OkAsync<List<OkPath>> {
+suspend fun OkContext.mavenResolveRuntimeDependencies(): List<OkPath> {
     return mavenResolveRuntimeDependencies(MavenResolveDependenciesScope.Runtime)
 }
 
-private fun OkContext.mavenResolveRuntimeDependencies(scope: MavenResolveDependenciesScope): OkAsync<List<OkPath>> {
+private suspend fun OkContext.mavenResolveRuntimeDependencies(scope: MavenResolveDependenciesScope): List<OkPath> {
     val mavenLibrariesDirectory = path(".okay/libs/maven").system()
-    return launchCachedCoroutine(
+    return cachedCoroutine(
         describeCoroutine("mavenResolve${scope}Dependencies", verbosity = Info),
         input = OkInput.none(),
         output = OkOutput.none()
     ) {
-        val parsedCoordinates = dependenciesClosure(scope).await()
+        val parsedCoordinates = dependenciesClosure(scope)
             .mapNotNull { declaration -> parseMavenCoordinates(declaration.value) }
 
         val resolvedDependencies = parsedCoordinates.map { coordinates ->
-            mavenResolveDependency(mavenLibrariesDirectory, coordinates)
-        }.map { it.await() }
+            async {  mavenResolveDependency(mavenLibrariesDirectory, coordinates) }
+        }.awaitAll()
 
         resolvedDependencies
     }
 }
 
-private fun OkContext.dependenciesClosure(scope: MavenResolveDependenciesScope) = when (scope) {
+private suspend fun OkContext.dependenciesClosure(scope: MavenResolveDependenciesScope) = when (scope) {
     MavenResolveDependenciesScope.Compile -> compileDependenciesClosure()
     MavenResolveDependenciesScope.Runtime -> runtimeDependenciesClosure()
 }

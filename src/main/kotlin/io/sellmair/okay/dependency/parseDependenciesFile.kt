@@ -7,10 +7,10 @@ import kotlin.io.path.exists
 import kotlin.io.path.inputStream
 
 @OptIn(ExperimentalSerializationApi::class)
-fun OkContext.parseDependenciesFile(): OkAsync<OkDependenciesFile?> {
+suspend fun OkContext.parseDependenciesFile(): OkDependenciesFile? {
     val dependenciesFile = modulePath("okay.libs.json")
 
-    return launchMemoizedCoroutine(
+    return memoizedCoroutine(
         describeCoroutine("parseLibsFile"),
         input = OkFileInput(dependenciesFile)
     ) task@{
