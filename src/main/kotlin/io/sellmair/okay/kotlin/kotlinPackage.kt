@@ -10,10 +10,8 @@ import io.sellmair.okay.maven.mavenResolveRuntimeDependencies
 import io.sellmair.okay.utils.ansiGreen
 import io.sellmair.okay.utils.ansiReset
 import io.sellmair.okay.utils.log
-import kotlin.io.path.copyTo
-import kotlin.io.path.createParentDirectories
-import kotlin.io.path.name
-import kotlin.io.path.relativeTo
+import java.nio.file.attribute.PosixFilePermission
+import kotlin.io.path.*
 
 suspend fun OkContext.kotlinPackage(): OkPath {
     val packageDir = modulePath("build/main/package")
@@ -25,6 +23,7 @@ suspend fun OkContext.kotlinPackage(): OkPath {
     ) {
         val mavenRuntimeDependencies = async { packageMavenRuntimeDependencies(packageDir) }
         val moduleDependencies = async { packageModuleDependencies(packageDir) }
+        async { packageStartScript(packageDir) }
 
         val classPath = async {
             (mavenRuntimeDependencies.await() + moduleDependencies.await()).map { path ->
@@ -87,5 +86,28 @@ suspend fun OkContext.packageMavenRuntimeDependencies(packageDir: OkPath): List<
         }
 
         destinationFiles
+    }
+}
+
+suspend fun OkContext.packageStartScript(packageDir: OkPath): OkPath {
+    val scriptFile = packageDir.resolve(moduleName())
+    val dollar = "$"
+    val scriptContent = """
+        #!/bin/bash
+        script_dir=$(dirname $0)
+        java -jar ${dollar}script_dir/${moduleName()}.jar
+    """.trimIndent()
+
+    return cachedCoroutine(
+        describeCoroutine("packageStartScript"),
+        input = OkInputString(scriptContent),
+        output = OkOutputFile(scriptFile)
+    ) {
+        scriptFile.system().createParentDirectories()
+        scriptFile.system().writeText(scriptContent)
+        scriptFile.system().setPosixFilePermissions(
+             scriptFile.system().getPosixFilePermissions() + PosixFilePermission.OWNER_EXECUTE
+        )
+        scriptFile
     }
 }
