@@ -103,8 +103,11 @@ private fun <T> OkContext.restoreOrLaunchTask(
     descriptor: OkCoroutineDescriptor<T>, input: OkInput, output: OkOutput, body: suspend OkContext.() -> T
 ): OkCoroutine<T> {
     return launchOkCoroutine(input, cs.coroutineContext.pushOkStack(descriptor) + Job()) { key ->
+        val cacheResult = tryRestoreCacheUnchecked(key)
+        cs.coroutineContext[OkCoroutineCacheHook]?.onCacheResult(descriptor, cacheResult)
+
         @Suppress("UNCHECKED_CAST")
-        when (val cacheResult = tryRestoreCacheUnchecked(key)) {
+        when (cacheResult) {
             is CacheHit -> (cacheResult.entry as OkOutputCacheRecord<*>).value as T
             is CacheMiss -> runCoroutine(key, descriptor, input, output, body)
         }

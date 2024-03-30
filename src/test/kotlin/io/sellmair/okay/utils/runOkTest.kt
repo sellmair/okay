@@ -13,9 +13,10 @@ fun runOkTest(
 ) {
     runTest {
         ok {
-            withOkContext(OkTestLogger() + coroutineContext) {
+            withOkContext(OkTestLogger() + OkTestCoroutineCacheHook() + coroutineContext) {
                 block()
             }
         }
     }
 }
+

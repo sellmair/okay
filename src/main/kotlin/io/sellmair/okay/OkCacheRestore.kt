@@ -6,7 +6,7 @@ import io.sellmair.okay.utils.log
 
 internal sealed class CacheResult
 internal data class CacheHit(val entry: OkInputCacheRecord) : CacheResult()
-internal data object CacheMiss : CacheResult()
+internal data class CacheMiss(val dirty: OkInputCacheRecord?) : CacheResult()
 
 
 /**
@@ -15,7 +15,7 @@ internal data object CacheMiss : CacheResult()
  */
 internal suspend fun OkContext.tryRestoreCacheUnchecked(cacheKey: OkHash): CacheResult {
     val cacheEntry = readCacheEntry(cacheKey) ?: run {
-        return CacheMiss
+        return CacheMiss(null)
     }
 
     return tryRestoreCache(cacheEntry)
@@ -25,12 +25,12 @@ internal suspend fun OkContext.tryRestoreCacheUnchecked(cacheKey: OkHash): Cache
  * Will only restore the cache from the key, if the inputs were unchanged.
  */
 private suspend fun OkContext.tryRestoreCacheChecked(cacheKey: OkHash): CacheResult {
-    val entry = readCacheEntry(cacheKey) ?: return CacheMiss
+    val entry = readCacheEntry(cacheKey) ?: return CacheMiss(null)
     return withOkStack(entry.descriptor) {
         val inputState = entry.input.cacheKey()
         if (inputState != cacheKey) {
             log("Cache miss. Expected: ($cacheKey), found: ($inputState)")
-            return@withOkStack CacheMiss
+            return@withOkStack CacheMiss(entry)
         }
         tryRestoreCache(entry)
     }

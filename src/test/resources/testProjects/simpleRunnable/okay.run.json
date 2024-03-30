@@ -1,0 +1,10 @@
+[
+  {
+    "class": "MainKt"
+  },
+  {
+    "name": "other",
+    "class": "OtherKt",
+    "function": "other"
+  }
+]
