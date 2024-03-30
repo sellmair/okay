@@ -9,7 +9,7 @@ suspend fun OkContext.kotlinCompileDependencies(): List<OkPath> {
         .mapNotNull { it.dependencyModulePath() }
 
     return dependencyModulesClosure.map { dependencyModule ->
-        withModule(dependencyModule) {
+        withOkModule(dependencyModule) {
             async { kotlinCompile() }
         }
     }.awaitAll()

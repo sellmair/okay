@@ -52,7 +52,7 @@ suspend fun OkContext.kotlinPackage(): OkPath {
 suspend fun OkContext.packageModuleDependencies(packageDir: OkPath): List<OkPath> {
     val dependencyModules = runtimeDependenciesClosure().mapNotNull { it.dependencyModulePath() }
     val dependencyModuleJars = dependencyModules.map { module ->
-        withModule(module) {
+        withOkModule(module) {
             async { kotlinJar() }
         }
     }

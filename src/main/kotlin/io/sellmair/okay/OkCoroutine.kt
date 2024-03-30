@@ -40,7 +40,7 @@ suspend fun <T> OkContext.memoizedCoroutine(
     val coroutine = cs.coroutineContext.okCoroutineCache.getOrPut(effectiveInput) {
         launchOkCoroutine(effectiveInput) { key ->
             val result = withOkStack(descriptor) {
-                withOkCoroutineDependencies { OkContext { body() } }
+                withOkCoroutineDependencies { OkScope { body() } }
             }
 
             val cacheRecord = OkInputCacheRecordImpl(key, effectiveInput, descriptor, result.dependencies)
@@ -119,7 +119,7 @@ private suspend fun <T> runCoroutine(
     body: suspend OkContext.() -> T
 ): T {
     val resultWithDependencies = withOkCoroutineDependencies {
-        OkContext { body() }
+        OkScope { body() }
     }
 
     storeCache(

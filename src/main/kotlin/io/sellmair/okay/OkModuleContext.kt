@@ -2,7 +2,6 @@ package io.sellmair.okay
 
 import io.sellmair.okay.io.OkPath
 import kotlin.coroutines.CoroutineContext
-import kotlin.io.path.absolutePathString
 import kotlin.io.path.name
 
 
@@ -21,8 +20,8 @@ fun OkContext.modulePath(path: String): OkPath {
     return modulePath().resolve(path)
 }
 
-internal inline fun <T> OkContext.withModule(path: OkPath, block: OkContext.() -> T): T {
-    return with(this + OkModuleContext(path)) {
+internal suspend fun <T> OkContext.withOkModule(path: OkPath, block: suspend OkContext.() -> T): T {
+    return withOkContext(OkModuleContext(path)) {
         block()
     }
 }

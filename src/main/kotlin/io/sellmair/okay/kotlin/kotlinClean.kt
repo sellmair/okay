@@ -22,7 +22,7 @@ internal suspend fun OkContext.kotlinClean() {
             .mapNotNull { it.dependencyModulePath() }
 
         dependencyModules.map { module ->
-            async { withModule(module) { kotlinClean() } }
+            async { withOkModule(module) { kotlinClean() } }
         }.awaitAll()
 
         log("Cleaning Kotlin")

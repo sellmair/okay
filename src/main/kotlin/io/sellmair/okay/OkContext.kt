@@ -5,6 +5,7 @@ package io.sellmair.okay
 
 import kotlinx.coroutines.*
 import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 
 fun ok(body: suspend OkContext.() -> Unit) {
     runBlocking(Dispatchers.Default + OkCoroutineStack(emptyList()) + OkCoroutineCache() + Job()) {
@@ -32,12 +33,21 @@ fun OkContext(cs: CoroutineScope): OkContext =
     OkContextImpl(cs)
 
 
-suspend fun <T> OkContext(body: suspend OkContext.() -> T): T {
+suspend fun <T> OkScope(body: suspend OkContext.() -> T): T {
     return coroutineScope {
         with(OkContext(this)) {
             body()
         }
     }
+}
+
+suspend fun <T> OkContext.withOkContext(
+    ctx: CoroutineContext = EmptyCoroutineContext,
+    action: suspend OkContext.() -> T
+): T {
+    val newCoroutineContext = cs.coroutineContext + ctx
+    val okContext = OkContext(CoroutineScope(newCoroutineContext))
+    return okContext.async { action(this@async) }.await()
 }
 
 private class OkContextImpl(override val cs: CoroutineScope) : OkContext
