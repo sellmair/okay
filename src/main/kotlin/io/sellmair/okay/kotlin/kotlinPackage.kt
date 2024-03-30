@@ -14,7 +14,7 @@ import java.nio.file.attribute.PosixFilePermission
 import kotlin.io.path.*
 
 suspend fun OkContext.kotlinPackage(): OkPath {
-    val packageDir = modulePath("build/main/package")
+    val packageDir = modulePath("build/application")
 
     return cachedCoroutine(
         describeCoroutine("kotlinPackage", verbosity = Info),

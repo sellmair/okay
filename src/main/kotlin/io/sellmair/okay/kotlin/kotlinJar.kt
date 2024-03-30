@@ -28,7 +28,7 @@ suspend fun OkContext.kotlinJar(
     }
 
     return zipFiles(
-        modulePath("build/main/jar/${moduleName()}.jar"),
+        modulePath("build/jar/${moduleName()}.jar"),
         data = mapOf("META-INF/MANIFEST.MF" to manifest.encodeToByteArray()),
         files = files,
     )

@@ -22,7 +22,7 @@ suspend fun OkContext.kotlinCompile(): OkPath  {
     val dependencies = mavenResolveCompileDependencies().map { it.system() } +
             kotlinCompileDependencies().map { it.system() }
 
-    return kotlinCompile(kotlinSources, dependencies, modulePath("build/main/classes").system())
+    return kotlinCompile(kotlinSources, dependencies, modulePath("build/classes").system())
 }
 
 suspend fun OkContext.kotlinCompile(

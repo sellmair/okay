@@ -51,7 +51,7 @@ okay package
 
 Execute it:
 ```shell
-java -jar testProject/build/main/package/testProject.jar
+java -jar testProject/build/package/testProject.jar
 ```
 
 ```shell
