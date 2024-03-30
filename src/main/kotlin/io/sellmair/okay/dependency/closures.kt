@@ -6,7 +6,7 @@ import io.sellmair.okay.withOkModule
 
 suspend fun OkContext.compileDependenciesClosure(): Set<OkDependencyDeclaration> {
     return memoizedCoroutine(describeCoroutine("compileDependenciesClosure"), input = OkInput.none()) {
-        parseDependenciesFile()?.declarations.orEmpty()
+        parseDependenciesFile()?.declarations.orEmpty().plus(kotlinStdlibDependencyDeclaration)
             .filter { it.isCompile }
             .withClosure<OkDependencyDeclaration> closure@{ declaration ->
                 val module = moduleOrNull(declaration) ?: return@closure emptyList()
@@ -19,7 +19,7 @@ suspend fun OkContext.compileDependenciesClosure(): Set<OkDependencyDeclaration>
 
 suspend fun OkContext.runtimeDependenciesClosure(): Set<OkDependencyDeclaration> {
     return memoizedCoroutine(describeCoroutine("runtimeDependenciesClosure"), input = OkInput.none()) {
-        parseDependenciesFile()?.declarations.orEmpty()
+        parseDependenciesFile()?.declarations.orEmpty().plus(kotlinStdlibDependencyDeclaration)
             .filter { it.isRuntime }
             .withClosure<OkDependencyDeclaration> closure@{ declaration ->
                 val module = moduleOrNull(declaration) ?: return@closure emptyList()
@@ -29,3 +29,10 @@ suspend fun OkContext.runtimeDependenciesClosure(): Set<OkDependencyDeclaration>
             }
     }
 }
+
+private val kotlinStdlibDependencyDeclaration = OkDependencyDeclaration(
+    "org.jetbrains.kotlin:kotlin-stdlib:1.9.23",
+    isCompile = true,
+    isExported = false,
+    isRuntime = true
+)
