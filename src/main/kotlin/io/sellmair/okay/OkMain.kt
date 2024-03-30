@@ -2,6 +2,7 @@
 
 package io.sellmair.okay
 
+import io.sellmair.okay.clean.OkCleanExtension
 import io.sellmair.okay.kotlin.kotlinCompile
 import io.sellmair.okay.kotlin.kotlinJar
 import io.sellmair.okay.kotlin.kotlinPackage
@@ -45,8 +46,9 @@ fun main(args: Array<String>) {
             log("Cleaning .okay")
             Path(".okay").deleteRecursively()
 
-            log("Cleaning build")
-            Path("build").deleteRecursively()
+            okExtensions<OkCleanExtension> { extension ->
+                extension.clean(this)
+            }
         }
     }
 }
