@@ -5,7 +5,6 @@ import io.sellmair.okay.OkCoroutineDescriptor.Verbosity.Info
 import io.sellmair.okay.dependency.compileDependenciesClosure
 import io.sellmair.okay.dependency.runtimeDependenciesClosure
 import io.sellmair.okay.io.OkPath
-import io.sellmair.okay.utils.log
 
 private enum class MavenResolveDependenciesScope {
     Compile, Runtime
@@ -20,7 +19,7 @@ suspend fun OkContext.mavenResolveRuntimeDependencies(): List<OkPath> {
 }
 
 private suspend fun OkContext.mavenResolveRuntimeDependencies(scope: MavenResolveDependenciesScope): List<OkPath> {
-    val mavenLibrariesDirectory = path(".okay/libs/maven").system()
+    val mavenLibrariesDirectory = path(".okay/libs/maven")
     return cachedCoroutine(
         describeCoroutine("mavenResolve${scope}Dependencies", verbosity = Info),
         input = OkInput.none(),

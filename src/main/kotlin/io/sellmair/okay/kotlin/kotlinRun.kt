@@ -6,13 +6,12 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
 import org.jetbrains.kotlin.konan.file.use
 import java.net.URLClassLoader
-import java.nio.file.Path
 import java.util.*
 import kotlin.io.path.inputStream
 import kotlin.io.path.isRegularFile
 
 
-suspend fun OkContext.kotlinRun(target: String? = null, arguments: List<String>) {
+suspend fun OkContext.kotlinRun(target: String? = null, arguments: List<String> = emptyList()) {
     val mavenDependencies = async { mavenResolveRuntimeDependencies() }
     val moduleDependencies = async { kotlinCompileRuntimeDependencies() }
     val compiled = async { kotlinCompile() }

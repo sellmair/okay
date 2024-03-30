@@ -9,7 +9,7 @@ suspend fun OkContext.compileDependenciesClosure(): Set<OkDependencyDeclaration>
         parseDependenciesFile()?.declarations.orEmpty()
             .filter { it.isCompile }
             .withClosure<OkDependencyDeclaration> closure@{ declaration ->
-                val module = declaration.dependencyModulePath() ?: return@closure emptyList()
+                val module = moduleOrNull(declaration) ?: return@closure emptyList()
                 withOkModule(module) {
                     parseDependenciesFile()?.declarations.orEmpty().filter { it.isExported && it.isCompile }
                 }
@@ -22,7 +22,7 @@ suspend fun OkContext.runtimeDependenciesClosure(): Set<OkDependencyDeclaration>
         parseDependenciesFile()?.declarations.orEmpty()
             .filter { it.isRuntime }
             .withClosure<OkDependencyDeclaration> closure@{ declaration ->
-                val module = declaration.dependencyModulePath() ?: return@closure emptyList()
+                val module = moduleOrNull(declaration) ?: return@closure emptyList()
                 withOkModule(module) {
                     parseDependenciesFile()?.declarations.orEmpty().filter { it.isRuntime }
                 }

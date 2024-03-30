@@ -1,10 +1,7 @@
 package io.sellmair.okay
 
 import io.sellmair.okay.io.OkPath
-import io.sellmair.okay.io.toOk
-import org.jetbrains.kotlin.it.unimi.dsi.fastutil.Hash
 import java.io.Serializable
-import java.nio.file.Path
 import kotlin.io.path.isDirectory
 
 abstract class OkInput : Serializable {
@@ -19,8 +16,6 @@ abstract class OkInput : Serializable {
 fun OkInput(vararg inputs: OkInput) = OkInputs(inputs.toList())
 
 data class OkInputFile(val path: OkPath) : OkInput() {
-    constructor(path: Path) : this(path.toOk())
-
     override fun currentState(): OkHash {
         val systemPath = path.system()
         return if (systemPath.isDirectory()) systemPath.directoryCacheKey()

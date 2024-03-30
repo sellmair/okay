@@ -13,7 +13,7 @@ internal data object CacheMiss : CacheResult()
  * The input from the cache entry is not further validated.
  * This is safe to be called if the [cacheKey] was recently created from the current input
  */
-internal suspend fun tryRestoreCacheUnchecked(cacheKey: OkHash): CacheResult {
+internal suspend fun OkContext.tryRestoreCacheUnchecked(cacheKey: OkHash): CacheResult {
     val cacheEntry = readCacheEntry(cacheKey) ?: run {
         return CacheMiss
     }
@@ -24,7 +24,7 @@ internal suspend fun tryRestoreCacheUnchecked(cacheKey: OkHash): CacheResult {
 /**
  * Will only restore the cache from the key, if the inputs were unchanged.
  */
-private suspend fun tryRestoreCacheChecked(cacheKey: OkHash): CacheResult {
+private suspend fun OkContext.tryRestoreCacheChecked(cacheKey: OkHash): CacheResult {
     val entry = readCacheEntry(cacheKey) ?: return CacheMiss
     return withOkStack(entry.descriptor) {
         val inputState = entry.input.cacheKey()
@@ -36,7 +36,7 @@ private suspend fun tryRestoreCacheChecked(cacheKey: OkHash): CacheResult {
     }
 }
 
-private suspend fun tryRestoreCache(
+private suspend fun OkContext.tryRestoreCache(
     cacheEntry: OkInputCacheRecord
 ): CacheResult {
     /* Launch & await restore of dependencies */

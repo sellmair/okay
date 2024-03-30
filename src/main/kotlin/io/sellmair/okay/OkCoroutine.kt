@@ -111,7 +111,7 @@ private fun <T> OkContext.restoreOrLaunchTask(
     }
 }
 
-private suspend fun <T> runCoroutine(
+private suspend fun <T> OkContext.runCoroutine(
     inputCacheKey: OkHash,
     descriptor: OkCoroutineDescriptor<T>,
     input: OkInput,

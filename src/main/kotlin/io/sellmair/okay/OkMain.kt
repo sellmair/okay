@@ -2,16 +2,12 @@
 
 package io.sellmair.okay
 
-import io.sellmair.okay.clean.OkCleanExtension
+import io.sellmair.okay.clean.okClean
 import io.sellmair.okay.kotlin.kotlinCompile
 import io.sellmair.okay.kotlin.kotlinJar
 import io.sellmair.okay.kotlin.kotlinPackage
 import io.sellmair.okay.kotlin.kotlinRun
-import io.sellmair.okay.utils.log
-import java.util.ServiceLoader
 import kotlin.io.path.ExperimentalPathApi
-import kotlin.io.path.Path
-import kotlin.io.path.deleteRecursively
 
 @OptIn(ExperimentalPathApi::class)
 fun main(args: Array<String>) {
@@ -43,12 +39,7 @@ fun main(args: Array<String>) {
         }
 
         if (args.singleOrNull() == "clean") {
-            log("Cleaning .okay")
-            Path(".okay").deleteRecursively()
-
-            okExtensions<OkCleanExtension> { extension ->
-                extension.clean(this)
-            }
+            okClean()
         }
     }
 }

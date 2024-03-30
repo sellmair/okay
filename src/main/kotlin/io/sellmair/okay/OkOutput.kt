@@ -1,7 +1,6 @@
 package io.sellmair.okay
 
 import io.sellmair.okay.io.OkPath
-import io.sellmair.okay.io.toOk
 import java.io.Serializable
 import java.nio.file.Path
 import kotlin.io.path.ExperimentalPathApi
@@ -17,13 +16,9 @@ data object OkEmptyOutput : OkOutput() {
     private fun readResolve(): Any = OkEmptyOutput
 }
 
-data class OkOutputFile(val path: OkPath) : OkOutput(), Serializable {
-    constructor(path: Path) : this(path.toOk())
-}
+data class OkOutputFile(val path: OkPath) : OkOutput(), Serializable
 
-data class OkOutputDirectory(val path: OkPath) : OkOutput() {
-    constructor(path: Path) : this(path.toOk())
-}
+data class OkOutputDirectory(val path: OkPath) : OkOutput()
 
 fun OkOutput(vararg output: OkOutput): OkOutput {
     val outputs = output.toList()

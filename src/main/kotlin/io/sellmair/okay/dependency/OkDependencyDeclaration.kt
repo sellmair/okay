@@ -1,18 +1,19 @@
 package io.sellmair.okay.dependency
 
+import io.sellmair.okay.OkContext
 import io.sellmair.okay.io.OkPath
+import io.sellmair.okay.path
 
 data class OkDependencyDeclaration(
     val value: String,
     val isExported: Boolean,
     val isCompile: Boolean,
     val isRuntime: Boolean,
-) {
-    fun dependencyModulePath(): OkPath? {
-        if (value.startsWith("module://")) {
-            return OkPath(value.removePrefix("module://"))
-        }
+)
 
-        return null
+fun OkContext.moduleOrNull(dependencyDeclaration: OkDependencyDeclaration): OkPath? {
+    if (dependencyDeclaration.value.startsWith("module://")) {
+        return path(dependencyDeclaration.value.removePrefix("module://"))
     }
+    return null
 }

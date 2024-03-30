@@ -71,7 +71,7 @@ private class HashBuilderImpl(
     }
 
     override fun push(value: OkPath) {
-        push(value.path)
+        push(value.toString())
     }
 
     fun build(): OkHash {

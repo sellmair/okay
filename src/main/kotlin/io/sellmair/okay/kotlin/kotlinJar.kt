@@ -4,7 +4,6 @@ package io.sellmair.okay.kotlin
 
 import io.sellmair.okay.*
 import io.sellmair.okay.io.OkPath
-import io.sellmair.okay.io.toOk
 import io.sellmair.okay.zip.zipFiles
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.relativeTo
@@ -17,7 +16,7 @@ suspend fun OkContext.kotlinJar(
 
     val files = outputDir.system().walk().associate { file ->
         val relativePath = file.relativeTo(outputDir.system())
-        relativePath.toString() to file.toOk()
+        relativePath.toString() to file.ok()
     }
 
     val manifest = buildString {

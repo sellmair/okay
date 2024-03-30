@@ -2,10 +2,10 @@ package io.sellmair.okay.kotlin
 
 import io.sellmair.okay.*
 import io.sellmair.okay.OkCoroutineDescriptor.Verbosity.Info
+import io.sellmair.okay.dependency.moduleOrNull
 import io.sellmair.okay.dependency.runtimeDependenciesClosure
 import io.sellmair.okay.io.OkPath
 import io.sellmair.okay.io.copyFile
-import io.sellmair.okay.io.toOk
 import io.sellmair.okay.maven.mavenResolveRuntimeDependencies
 import io.sellmair.okay.utils.ansiGreen
 import io.sellmair.okay.utils.ansiReset
@@ -50,7 +50,7 @@ suspend fun OkContext.kotlinPackage(): OkPath {
 
 
 suspend fun OkContext.packageModuleDependencies(packageDir: OkPath): List<OkPath> {
-    val dependencyModules = runtimeDependenciesClosure().mapNotNull { it.dependencyModulePath() }
+    val dependencyModules = runtimeDependenciesClosure().mapNotNull { moduleOrNull(it) }
     val dependencyModuleJars = dependencyModules.map { module ->
         withOkModule(module) {
             async { kotlinJar() }
@@ -72,7 +72,7 @@ suspend fun OkContext.packageMavenRuntimeDependencies(packageDir: OkPath): List<
     val runtimeDependencies = mavenResolveRuntimeDependencies()
     val destinationFiles = runtimeDependencies.map { file ->
         packageDir.system().resolve("libs/${file.system().name}")
-    }.map { it.toOk() }
+    }.map { it.ok() }
 
     return cachedCoroutine(
         describeCoroutine("copyMavenRuntimeDependencies"),
@@ -106,7 +106,7 @@ suspend fun OkContext.packageStartScript(packageDir: OkPath): OkPath {
         scriptFile.system().createParentDirectories()
         scriptFile.system().writeText(scriptContent)
         scriptFile.system().setPosixFilePermissions(
-             scriptFile.system().getPosixFilePermissions() + PosixFilePermission.OWNER_EXECUTE
+            scriptFile.system().getPosixFilePermissions() + PosixFilePermission.OWNER_EXECUTE
         )
         scriptFile
     }

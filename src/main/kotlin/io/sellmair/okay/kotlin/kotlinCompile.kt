@@ -5,7 +5,6 @@ package io.sellmair.okay.kotlin
 import io.sellmair.okay.*
 import io.sellmair.okay.OkCoroutineDescriptor.Verbosity.Info
 import io.sellmair.okay.io.OkPath
-import io.sellmair.okay.io.toOk
 import io.sellmair.okay.maven.mavenResolveCompileDependencies
 import io.sellmair.okay.utils.log
 import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
@@ -13,22 +12,23 @@ import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
 import org.jetbrains.kotlin.compilerRunner.toArgumentStrings
 import org.jetbrains.kotlin.incremental.classpathAsList
 import org.jetbrains.kotlin.incremental.destinationAsFile
-import java.nio.file.Path
 import kotlin.io.path.*
 
-suspend fun OkContext.kotlinCompile(): OkPath  {
-    val mainSourcesDir = modulePath("src").system()
-    val kotlinSources = mainSourcesDir.walk().filter { it.extension == "kt" }.toList()
-    val dependencies = mavenResolveCompileDependencies().map { it.system() } +
-            kotlinCompileDependencies().map { it.system() }
+suspend fun OkContext.kotlinCompile(): OkPath {
+    val kotlinSources = modulePath("src").system().walk()
+        .filter { it.extension == "kt" }
+        .map { it.ok() }.toList()
 
-    return kotlinCompile(kotlinSources, dependencies, modulePath("build/classes").system())
+    val dependencies = mavenResolveCompileDependencies() +
+            kotlinCompileDependencies()
+
+    return kotlinCompile(kotlinSources, dependencies, modulePath("build/classes"))
 }
 
 suspend fun OkContext.kotlinCompile(
-    sources: List<Path>,
-    dependencies: List<Path>,
-    outputDirectory: Path
+    sources: List<OkPath>,
+    dependencies: List<OkPath>,
+    outputDirectory: OkPath
 ): OkPath {
     return cachedCoroutine(
         describeCoroutine("kotlinCompile", verbosity = Info),
@@ -38,17 +38,17 @@ suspend fun OkContext.kotlinCompile(
     ) {
         log("Compiling Kotlin")
 
-        outputDirectory.deleteRecursively()
-        outputDirectory.createDirectories()
+        outputDirectory.system().deleteRecursively()
+        outputDirectory.system().createDirectories()
 
         val args = K2JVMCompilerArguments()
         args.noStdlib = true
-        args.classpathAsList = dependencies.map { it.toFile() }
-        args.freeArgs += sources.map { it.absolutePathString() }
-        args.destinationAsFile = outputDirectory.toFile()
+        args.classpathAsList = dependencies.map { it.system().toFile() }
+        args.freeArgs += sources.map { it.system().absolutePathString() }
+        args.destinationAsFile = outputDirectory.system().toFile()
 
         K2JVMCompiler.main(args.toArgumentStrings().toTypedArray())
 
-        outputDirectory.toOk()
+        outputDirectory
     }
 }

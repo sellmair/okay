@@ -9,6 +9,6 @@ suspend fun OkContext.copyFile(from: OkPath, to: OkPath): OkPath {
         input = OkInputFile(from),
         output = OkOutputFile(to)
     ) {
-        from.system().copyTo(to.system(), true).toOk()
+        from.system().copyTo(to.system(), true).ok()
     }
 }

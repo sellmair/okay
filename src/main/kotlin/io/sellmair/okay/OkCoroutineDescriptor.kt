@@ -19,7 +19,7 @@ data class OkCoroutineDescriptor<T>(
         return hash {
             push(id)
             push(title)
-            push(module.path)
+            push(module)
             push(verbosity.name)
             push(signatureOfT)
         }
@@ -42,6 +42,6 @@ inline fun <reified T> OkContext.describeRootCoroutine(
     verbosity: OkCoroutineDescriptor.Verbosity = OkCoroutineDescriptor.Verbosity.Debug
 ): OkCoroutineDescriptor<T> {
     return OkCoroutineDescriptor(
-        id = id, title = title, module = rootModulePath(), verbosity, signatureOfT = typeOf<T>().toString()
+        id = id, title = title, module = rootPath(), verbosity, signatureOfT = typeOf<T>().toString()
     )
 }

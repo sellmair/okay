@@ -9,10 +9,6 @@ suspend fun <T> OkContext.withOkStack(descriptor: OkCoroutineDescriptor<*>, bloc
     return withOkContext(currentCoroutineContext().pushOkStack(descriptor), block)
 }
 
-suspend fun <T> withOkStack(descriptor: OkCoroutineDescriptor<*>, block: suspend CoroutineScope.() -> T): T {
-    return withContext(currentCoroutineContext().pushOkStack(descriptor), block)
-}
-
 val CoroutineContext.okStack: List<OkCoroutineDescriptor<*>>
     get() = (this[OkCoroutineStack] ?: error("Missing 'OkCoroutineStack'")).values
 
@@ -25,4 +21,3 @@ data class OkCoroutineStack(val values: List<OkCoroutineDescriptor<*>>) : Corout
 
     companion object Key : CoroutineContext.Key<OkCoroutineStack>
 }
-
