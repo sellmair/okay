@@ -1,5 +1,6 @@
 package io.sellmair.okay
 
+import io.sellmair.okay.utils.log
 import kotlinx.coroutines.*
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
@@ -137,7 +138,7 @@ private fun <T> OkContext.launchOkCoroutine(
     coroutineContext: CoroutineContext = EmptyCoroutineContext,
     body: suspend (key: OkHash) -> T
 ): OkCoroutine<T> {
-    val key = cs.async { input.cacheKey() }
+    val key = cs.async { input.cacheKey(ctx) }
     return OkCoroutine(
         key = key,
         value = cs.async(coroutineContext, start = CoroutineStart.LAZY) {

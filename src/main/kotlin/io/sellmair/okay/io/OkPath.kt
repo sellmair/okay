@@ -4,6 +4,7 @@ import io.sellmair.okay.OkUnsafe
 import java.io.Serializable
 import java.nio.file.Path
 import kotlin.io.path.Path
+import kotlin.io.path.extension
 
 
 class OkPath @OkUnsafe constructor(
@@ -27,6 +28,9 @@ class OkPath @OkUnsafe constructor(
         require(other.root == this.root)
         return OkPath(root, Path(value).resolve(other.value).toString())
     }
+
+    @OptIn(OkUnsafe::class)
+    val extension: String get() = Path(value).extension
 
     @OptIn(OkUnsafe::class)
     fun system(): Path {
