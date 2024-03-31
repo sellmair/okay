@@ -13,7 +13,7 @@ class OkHashTest {
     }
 
     @Test
-    fun `test - OkOutput none`() {
+    fun `test - OkOutput none`() = runOkTest {
         assertEquals(OkOutput.none().cacheKey(), OkOutput.none().cacheKey())
     }
 }

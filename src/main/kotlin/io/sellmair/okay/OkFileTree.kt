@@ -8,7 +8,7 @@ import kotlin.io.path.walk
 data class OkFileTree(
     val root: OkPath, val filter: (OkPath) -> Boolean
 ) : OkInput() {
-    override fun cacheKey(ctx: OkContext): OkHash {
+    override suspend fun cacheKey(ctx: OkContext): OkHash {
         return hash {
             walk(ctx).forEach { regularFile ->
                 push(OkInputFile(regularFile).cacheKey(ctx))

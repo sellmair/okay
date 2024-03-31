@@ -18,6 +18,8 @@ data class OkHash(val value: String) : Serializable {
     }
 }
 
+fun HashBuilder(): HashBuilder = HashBuilderImpl()
+
 interface HashBuilder {
     fun push(value: String)
     fun push(value: ByteArray)
@@ -25,6 +27,7 @@ interface HashBuilder {
     fun push(value: Byte)
     fun push(value: OkHash)
     fun push(value: OkPath)
+    fun build(): OkHash
 }
 
 fun hash(value: ByteArray): OkHash {
@@ -41,12 +44,11 @@ fun hash(hashes: List<OkHash>): OkHash {
     return hash(hashes.joinToString(";") { it.value })
 }
 
-fun hash(builder: HashBuilder.() -> Unit): OkHash {
-    val messageDigest = MessageDigest.getInstance("SHA-256")
-    return HashBuilderImpl(messageDigest).also(builder).build()
+inline fun hash(builder: HashBuilder.() -> Unit): OkHash {
+    return HashBuilder().also(builder).build()
 }
 
-private class HashBuilderImpl(
+class HashBuilderImpl(
     private val messageDigest: MessageDigest = MessageDigest.getInstance("SHA-256")
 ) : HashBuilder {
 
@@ -74,7 +76,7 @@ private class HashBuilderImpl(
         push(value.toString())
     }
 
-    fun build(): OkHash {
+    override fun build(): OkHash {
         return OkHash(messageDigest.digest())
     }
 }
