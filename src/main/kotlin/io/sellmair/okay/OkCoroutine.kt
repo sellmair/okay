@@ -1,6 +1,5 @@
 package io.sellmair.okay
 
-import io.sellmair.okay.utils.log
 import kotlinx.coroutines.*
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
@@ -44,9 +43,8 @@ suspend fun <T> OkContext.memoizedCoroutine(
                 withOkCoroutineDependencies { OkScope { body() } }
             }
 
-            val cacheRecord = OkInputCacheRecordImpl(key, effectiveInput, descriptor, result.dependencies)
-            storeCacheRecord(cacheRecord)
-
+            @OptIn(OkUnsafe::class)
+            storeCacheRecord(OkInputCacheRecordImpl(key, effectiveInput, descriptor, result.dependencies))
             result.value
         }
     }
@@ -104,7 +102,7 @@ private fun <T> OkContext.restoreOrLaunchTask(
     descriptor: OkCoroutineDescriptor<T>, input: OkInput, output: OkOutput, body: suspend OkContext.() -> T
 ): OkCoroutine<T> {
     return launchOkCoroutine(input, cs.coroutineContext.pushOkStack(descriptor) + Job()) { key ->
-        val cacheResult = tryRestoreCacheUnchecked(key)
+        val cacheResult = tryRestoreCachedCoroutineUnchecked(key)
         cs.coroutineContext[OkCoroutineCacheHook]?.onCacheResult(descriptor, cacheResult)
 
         @Suppress("UNCHECKED_CAST")
@@ -126,7 +124,7 @@ private suspend fun <T> OkContext.runCoroutine(
         OkScope { body() }
     }
 
-    storeCache(
+    storeCachedCoroutine(
         inputCacheKey, resultWithDependencies.value, descriptor, input, output, resultWithDependencies.dependencies
     )
 

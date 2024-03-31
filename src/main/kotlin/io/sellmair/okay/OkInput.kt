@@ -1,10 +1,11 @@
 package io.sellmair.okay
 
+import io.sellmair.okay.io.OkFileCollection
 import io.sellmair.okay.io.OkPath
 import java.io.Serializable
 import kotlin.io.path.isDirectory
 
-abstract class OkInput : Serializable {
+sealed class OkInput : Serializable {
     abstract suspend fun cacheKey(ctx: OkContext): OkHash
 
     companion object {
@@ -14,11 +15,26 @@ abstract class OkInput : Serializable {
 
 fun OkInput(vararg inputs: OkInput) = OkInputs(inputs.toList())
 
+fun OkPath.asInput(): OkInputFile = OkInputFile(this)
+
 data class OkInputFile(val path: OkPath) : OkInput() {
     override suspend fun cacheKey(ctx: OkContext): OkHash {
         val systemPath = path.system()
         return if (systemPath.isDirectory()) systemPath.directoryCacheKey()
         else systemPath.regularFileCacheKey()
+    }
+}
+
+fun OkFileCollection.asInput(): OkInputFileCollection =
+    OkInputFileCollection(this)
+
+data class OkInputFileCollection(val files: OkFileCollection) : OkInput() {
+    override suspend fun cacheKey(ctx: OkContext): OkHash {
+        return hash {
+            files.resolve(ctx).forEach { path ->
+                push(path.system().regularFileCacheKey())
+            }
+        }
     }
 }
 
