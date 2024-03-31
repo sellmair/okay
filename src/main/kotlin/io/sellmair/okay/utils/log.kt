@@ -1,7 +1,7 @@
 package io.sellmair.okay.utils
 
-import io.sellmair.okay.OkCoroutineStack
-import io.sellmair.okay.OkCoroutineDescriptor
+import io.sellmair.okay.OkCoroutineDescriptor.Verbosity
+import io.sellmair.okay.okStack
 import kotlinx.coroutines.currentCoroutineContext
 import kotlin.coroutines.CoroutineContext
 
@@ -12,12 +12,10 @@ internal const val ansiPurple = "\u001B[35m"
 internal const val ansiYellow = "\u001B[33m"
 
 suspend fun log(value: String) {
-    val stackElement = currentCoroutineContext()[OkCoroutineStack]?.values.orEmpty()
-        .lastOrNull { it.verbosity >= OkCoroutineDescriptor.Verbosity.Info }
-        ?: return
-
-    val title = stackElement.title
-    val module = stackElement.module.toString().ifBlank { "<root>" }
+    val stack = currentCoroutineContext().okStack
+    val lastFrame = stack.lastOrNull { it.verbosity >= Verbosity.Info } ?: return
+    val title = lastFrame.title
+    val module = lastFrame.module.toString().ifBlank { "<root>" }
 
     val logger = currentCoroutineContext()[OkLogger] ?: OkStdLogger
     logger.log(module, title, value)
