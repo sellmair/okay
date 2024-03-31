@@ -63,7 +63,12 @@ dependencies {
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
 }
 
-tasks.test {
+tasks.test.configure {
     useJUnitPlatform()
     outputs.upToDateWhen { false }
+    testLogging {
+        showStandardStreams = true
+        events("started", "skipped", "failed")
+        setExceptionFormat("full")
+    }
 }
