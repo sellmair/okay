@@ -27,7 +27,7 @@ internal suspend fun OkContext.tryRestoreCacheUnchecked(cacheKey: OkHash): Cache
 private suspend fun OkContext.tryRestoreCacheChecked(cacheKey: OkHash): CacheResult {
     val entry = readCacheEntry(cacheKey) ?: return CacheMiss(null)
     return withOkStack(entry.descriptor) {
-        val inputState = entry.input.cacheKey()
+        val inputState = entry.input.cacheKey(ctx)
         if (inputState != cacheKey) {
             log("Cache miss. Expected: ($cacheKey), found: ($inputState)")
             return@withOkStack CacheMiss(entry)
@@ -41,7 +41,10 @@ private suspend fun OkContext.tryRestoreCache(
 ): CacheResult {
     /* Launch & await restore of dependencies */
     cacheEntry.dependencies.map { dependencyCacheKey ->
-        tryRestoreCacheChecked(dependencyCacheKey)
+        val restoredDependencyResult = tryRestoreCacheChecked(dependencyCacheKey)
+        if(restoredDependencyResult is CacheMiss) {
+            return restoredDependencyResult
+        }
     }
 
     if (cacheEntry is OkOutputCacheRecord<*>) {

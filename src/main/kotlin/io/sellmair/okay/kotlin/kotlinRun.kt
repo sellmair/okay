@@ -7,8 +7,8 @@ import kotlinx.serialization.json.*
 import org.jetbrains.kotlin.konan.file.use
 import java.net.URLClassLoader
 import java.util.*
+import kotlin.io.path.exists
 import kotlin.io.path.inputStream
-import kotlin.io.path.isRegularFile
 
 
 suspend fun OkContext.kotlinRun(target: String? = null, arguments: List<String> = emptyList()) {
@@ -17,8 +17,8 @@ suspend fun OkContext.kotlinRun(target: String? = null, arguments: List<String> 
     val compiled = async { kotlinCompile() }
 
     val options = parseKotlinRunOptions(target)
-    val className = options.className
-    val functionName = options.functionName ?: "main"
+    val className = options?.className ?: "MainKt"
+    val functionName = options?.functionName ?: "main"
 
 
     val loader = URLClassLoader.newInstance(
@@ -60,14 +60,17 @@ internal class KotlinRunOptions(
 )
 
 @OptIn(ExperimentalSerializationApi::class)
-internal suspend fun OkContext.parseKotlinRunOptions(target: String? = null): KotlinRunOptions {
+internal suspend fun OkContext.parseKotlinRunOptions(target: String? = null): KotlinRunOptions? {
     val runConfigurationFile = modulePath("okay.run.json")
-    if (!runConfigurationFile.system().isRegularFile()) error("Missing '$runConfigurationFile'")
 
     return memoizedCoroutine(
         describeCoroutine("parseKotlinRunOptions"),
         input = OkInputFile(runConfigurationFile)
     ) coroutine@{
+        if (!runConfigurationFile.system().exists()) {
+            return@coroutine null
+        }
+
         val parsed = runConfigurationFile.system().inputStream().buffered().use { inputStream ->
             Json.decodeFromStream<JsonElement>(inputStream)
         }

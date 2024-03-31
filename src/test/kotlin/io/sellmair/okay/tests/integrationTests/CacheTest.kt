@@ -2,6 +2,7 @@ package io.sellmair.okay.tests.integrationTests
 
 import io.sellmair.okay.OkRoot
 import io.sellmair.okay.kotlin.kotlinCompile
+import io.sellmair.okay.kotlin.kotlinPackage
 import io.sellmair.okay.path
 import io.sellmair.okay.rootPath
 import io.sellmair.okay.utils.assertCacheHit
@@ -74,6 +75,30 @@ class CacheTest {
             assertCacheHit(path("moduleB"), "kotlinCompile")
             assertCacheHit(path("moduleA"), "kotlinCompile")
             assertCacheHit(rootPath(), "kotlinCompile")
+        }
+    }
+
+    @Test
+    fun `test - package`() {
+        testProjectPath("threeModules").copyToRecursively(tempDir, overwrite = true, followLinks = false)
+
+        runOkTest(OkRoot(tempDir)) {
+            kotlinPackage()
+            assertCacheMiss(rootPath(), "kotlinPackage")
+        }
+
+        runOkTest(OkRoot(tempDir)) {
+            kotlinPackage()
+            assertCacheHit(rootPath(), "kotlinPackage")
+        }
+
+        tempDir.resolve("moduleB/src/new.kt").apply {
+            writeText("class New")
+        }
+
+        runOkTest(OkRoot(tempDir)) {
+            kotlinPackage()
+            assertCacheMiss(rootPath(), "kotlinPackage")
         }
     }
 }

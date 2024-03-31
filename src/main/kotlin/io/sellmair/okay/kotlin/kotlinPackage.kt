@@ -19,7 +19,7 @@ suspend fun OkContext.kotlinPackage(): OkPath {
     return cachedCoroutine(
         describeCoroutine("kotlinPackage", verbosity = Info),
         input = OkInput.none(),
-        output = OkOutputDirectory(packageDir)
+        output = OkOutput.none()
     ) {
         val mavenRuntimeDependencies = async { packageMavenRuntimeDependencies(packageDir) }
         val moduleDependencies = async { packageModuleDependencies(packageDir) }
@@ -32,7 +32,7 @@ suspend fun OkContext.kotlinPackage(): OkPath {
         }
 
         val mainClass = async {
-            parseKotlinRunOptions().className
+            parseKotlinRunOptions()?.className ?: "MainKt"
         }
 
         val jarFile = kotlinJar(
@@ -77,7 +77,7 @@ suspend fun OkContext.packageMavenRuntimeDependencies(packageDir: OkPath): List<
     return cachedCoroutine(
         describeCoroutine("copyMavenRuntimeDependencies"),
         input = OkInputs(runtimeDependencies.map { OkInputFile(it) }),
-        output = OkOutputs(destinationFiles.map { OkOutputFile(it) }),
+        output = OkOutput.none(),
     ) {
         runtimeDependencies.forEach { file ->
             val targetFile = packageDir.system().resolve("libs/${file.system().name}")

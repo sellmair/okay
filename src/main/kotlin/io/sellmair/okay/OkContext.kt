@@ -26,6 +26,8 @@ fun ok(body: suspend OkContext.() -> Unit) {
 interface OkContext {
     val cs: CoroutineScope
 
+    val ctx: OkContext get() = this
+
     fun Path.ok(): OkPath = path(this)
 }
 

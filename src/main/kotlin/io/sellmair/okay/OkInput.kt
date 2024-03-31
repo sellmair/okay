@@ -5,8 +5,7 @@ import java.io.Serializable
 import kotlin.io.path.isDirectory
 
 abstract class OkInput : Serializable {
-    fun cacheKey(): OkHash = currentState()
-    abstract fun currentState(): OkHash
+    abstract fun cacheKey(ctx: OkContext): OkHash
 
     companion object {
         fun none(): OkInput = OkInputs(emptyList())
@@ -16,7 +15,7 @@ abstract class OkInput : Serializable {
 fun OkInput(vararg inputs: OkInput) = OkInputs(inputs.toList())
 
 data class OkInputFile(val path: OkPath) : OkInput() {
-    override fun currentState(): OkHash {
+    override fun cacheKey(ctx: OkContext): OkHash {
         val systemPath = path.system()
         return if (systemPath.isDirectory()) systemPath.directoryCacheKey()
         else systemPath.regularFileCacheKey()
@@ -26,22 +25,20 @@ data class OkInputFile(val path: OkPath) : OkInput() {
 fun OkInputString(value: String) = OkHashInput(hash(value))
 
 data class OkHashInput(val hash: OkHash) : OkInput() {
-    override fun currentState(): OkHash {
+    override fun cacheKey(ctx: OkContext): OkHash {
         return hash
     }
-
 }
 
 data class OkInputs(val values: List<OkInput>) : OkInput() {
-    override fun currentState(): OkHash {
+    override fun cacheKey(ctx: OkContext): OkHash {
         return hash {
             values.forEach { value ->
-                push(value.currentState())
+                push(value.cacheKey(ctx))
             }
         }
     }
 }
-
 
 operator fun OkInput.plus(other: OkInput): OkInputs {
     if (this is OkInputs && other is OkInputs) {

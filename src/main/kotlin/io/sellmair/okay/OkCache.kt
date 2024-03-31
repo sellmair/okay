@@ -2,12 +2,14 @@
 
 package io.sellmair.okay
 
+import io.sellmair.okay.utils.log
 import io.sellmair.okay.utils.withClosure
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
+import java.nio.file.FileAlreadyExistsException
 import java.nio.file.Path
 import kotlin.io.path.*
 
@@ -25,7 +27,7 @@ internal fun OkContext.readCacheEntry(key: OkHash): OkInputCacheRecord? {
     if (!file.system().isRegularFile()) return null
 
     return ObjectInputStream(file.system().inputStream().buffered()).use { stream ->
-        stream.readObject() as? OkOutputCacheRecord<*>
+        stream.readObject() as? OkInputCacheRecord
     }
 }
 
@@ -48,7 +50,14 @@ suspend fun <T> OkContext.storeCache(
                     if (!path.exists() || !path.isRegularFile()) return@async null
                     val fileCacheKey = path.regularFileCacheKey()
                     val blobFile = cacheBlobsDirectory.resolve(fileCacheKey.value).system()
-                    path.copyTo(blobFile, true)
+
+                    try {
+                        blobFile.createFile()
+                        path.copyTo(blobFile, true)
+                    } catch (t: FileAlreadyExistsException) {
+                        /* File exists, no need to store it */
+                    }
+
                     path.ok() to fileCacheKey
                 }
             }
