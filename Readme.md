@@ -1,4 +1,6 @@
 # okay: Kotlin Build Tool Experiment
+[![Build](https://github.com/sellmair/okay/actions/workflows/build.yaml/badge.svg)](https://github.com/sellmair/okay/actions/workflows/build.yaml)
+
 
 This project is experimental/educational. 
 It tries to explore the approach of a 'suspending task schedular' based build system.
