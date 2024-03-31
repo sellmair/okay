@@ -10,7 +10,6 @@ import io.sellmair.okay.maven.mavenResolveRuntimeDependencies
 import io.sellmair.okay.utils.ansiGreen
 import io.sellmair.okay.utils.ansiReset
 import io.sellmair.okay.utils.log
-import org.jetbrains.kotlin.konan.target.HostManager
 import java.nio.file.attribute.PosixFilePermission
 import kotlin.io.path.*
 
