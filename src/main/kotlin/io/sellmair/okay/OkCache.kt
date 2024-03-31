@@ -2,16 +2,16 @@
 
 package io.sellmair.okay
 
-import io.sellmair.okay.utils.log
 import io.sellmair.okay.utils.withClosure
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 import java.nio.file.FileAlreadyExistsException
 import java.nio.file.Path
 import kotlin.io.path.*
+
+@OptIn(ExperimentalCoroutinesApi::class)
+private val okCacheDispatcher = Dispatchers.IO.limitedParallelism(1)
 
 private val OkContext.cacheDirectory
     get() = path(".okay/cache")
@@ -22,11 +22,10 @@ private val OkContext.cacheEntriesDirectory
 private val OkContext.cacheBlobsDirectory
     get() = cacheDirectory.resolve("blobs")
 
-internal fun OkContext.readCacheEntry(key: OkHash): OkInputCacheRecord? {
+internal suspend fun OkContext.readCacheEntry(key: OkHash): OkInputCacheRecord? = withOkContext(okCacheDispatcher) {
     val file = cacheEntriesDirectory.resolve(key.value)
-    if (!file.system().isRegularFile()) return null
-
-    return ObjectInputStream(file.system().inputStream().buffered()).use { stream ->
+    if (!file.system().isRegularFile()) return@withOkContext null
+    ObjectInputStream(file.system().inputStream()).use { stream ->
         stream.readObject() as? OkInputCacheRecord
     }
 }
@@ -37,53 +36,48 @@ suspend fun <T> OkContext.storeCache(
     taskDescriptor: OkCoroutineDescriptor<T>,
     input: OkInput,
     output: OkOutput,
-    dependencies: List<OkHash>
-): OkOutputCacheRecord<T> {
+    dependencies: Iterable<OkHash>
+): OkOutputCacheRecord<T> = withOkContext(Dispatchers.IO) {
     cacheBlobsDirectory.system().createDirectories()
-    return withContext(Dispatchers.IO) {
-        val outputHash = async { output.cacheKey() }
+    val outputHash = output.cacheKey()
 
-        val files = output.walkFiles()
-            .toList()
-            .map { path ->
-                async {
-                    if (!path.exists() || !path.isRegularFile()) return@async null
-                    val fileCacheKey = path.regularFileCacheKey()
-                    val blobFile = cacheBlobsDirectory.resolve(fileCacheKey.value).system()
+    val files = output.walkFiles()
+        .toList()
+        .mapNotNull { path ->
+            if (!path.exists() || !path.isRegularFile()) return@mapNotNull null
+            val fileCacheKey = path.regularFileCacheKey()
+            val blobFile = cacheBlobsDirectory.resolve(fileCacheKey.value).system()
 
-                    try {
-                        blobFile.createFile()
-                        path.copyTo(blobFile, true)
-                    } catch (t: FileAlreadyExistsException) {
-                        /* File exists, no need to store it */
-                    }
-
-                    path.ok() to fileCacheKey
-                }
+            try {
+                blobFile.createFile()
+                path.copyTo(blobFile, true)
+            } catch (t: FileAlreadyExistsException) {
+                /* File exists, no need to store it */
             }
-            .mapNotNull { it.await() }
-            .toMap()
 
-        val entry = OkOutputCacheRecord(
-            key = key,
-            value = value,
-            descriptor = taskDescriptor,
-            input = input,
-            output = output,
-            outputHash = outputHash.await(),
-            dependencies = dependencies,
-            outputState = files
-        )
+            path.ok() to fileCacheKey
+        }
+        .toMap()
 
-        storeCacheRecord(entry)
-        entry
-    }
+    val entry = OkOutputCacheRecord(
+        key = key,
+        value = value,
+        descriptor = taskDescriptor,
+        input = input,
+        output = output,
+        outputHash = outputHash,
+        dependencies = dependencies.toSet(),
+        outputState = files
+    )
+
+    storeCacheRecord(entry)
+    entry
 }
 
 /**
  * ⚠️Only stores the cache record!!! Consider using [storeCache] instead?
  */
-internal fun OkContext.storeCacheRecord(value: OkInputCacheRecord): Path {
+internal suspend fun OkContext.storeCacheRecord(value: OkInputCacheRecord): Path = withOkContext(okCacheDispatcher) {
     cacheEntriesDirectory.system().createDirectories()
 
     val file = cacheEntriesDirectory.resolve(value.key.value).system()
@@ -91,30 +85,26 @@ internal fun OkContext.storeCacheRecord(value: OkInputCacheRecord): Path {
         stream.writeObject(value)
     }
 
-    return file
+    file
 }
 
-suspend fun OkContext.restoreFilesFromCache(entry: OkOutputCacheRecord<*>) {
-    withContext(Dispatchers.IO) {
-        entry.output.withClosure { output -> if (output is OkOutputs) output.values else emptyList() }
-            .filterIsInstance<OkOutputDirectory>()
-            .forEach { outputDirectory -> outputDirectory.path.system().deleteRecursively() }
+suspend fun OkContext.restoreFilesFromCache(entry: OkOutputCacheRecord<*>): Unit = withOkContext(okCacheDispatcher) {
+    entry.output.withClosure { output -> if (output is OkOutputs) output.values else emptyList() }
+        .filterIsInstance<OkOutputDirectory>()
+        .forEach { outputDirectory -> outputDirectory.path.system().deleteRecursively() }
 
-        entry.outputState.map { (path, hash) ->
-            async {
-                val blob = cacheBlobsDirectory.resolve(hash.value).system()
-                if (blob.isRegularFile()) {
-                    path.system().createParentDirectories()
-                    blob.copyTo(path.system(), true)
-                }
-            }
-        }.map { it.await() }
+    entry.outputState.forEach { (path, hash) ->
+        val blob = cacheBlobsDirectory.resolve(hash.value).system()
+        if (blob.isRegularFile()) {
+            path.system().createParentDirectories()
+            blob.copyTo(path.system(), true)
+        }
     }
 }
 
 
-fun OkOutput.cacheKey(): OkHash {
-    return when (this) {
+suspend fun OkOutput.cacheKey(): OkHash = withContext(okCacheDispatcher) {
+    when (this@cacheKey) {
         is OkOutputs -> hash(values.map { it.cacheKey() })
         is OkEmptyOutput -> hash("")
         is OkOutputDirectory -> path.system().directoryCacheKey()
@@ -123,8 +113,8 @@ fun OkOutput.cacheKey(): OkHash {
 }
 
 
-internal fun Path.directoryCacheKey(): OkHash {
-    return hash {
+internal suspend fun Path.directoryCacheKey(): OkHash = withContext(okCacheDispatcher) {
+    hash {
         push(absolutePathString())
         if (isDirectory()) {
             listDirectoryEntries().map { entry ->
@@ -138,8 +128,8 @@ internal fun Path.directoryCacheKey(): OkHash {
     }
 }
 
-internal fun Path.regularFileCacheKey(): OkHash {
-    return hash {
+internal suspend fun Path.regularFileCacheKey(): OkHash = withContext(okCacheDispatcher) {
+    hash {
         push(absolutePathString())
         push(if (exists()) 1 else 0)
 

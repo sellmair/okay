@@ -15,7 +15,7 @@ data class OkCoroutineDescriptor<T>(
         Silent, Debug, Info
     }
 
-    override fun cacheKey(ctx: OkContext): OkHash {
+    override suspend fun cacheKey(ctx: OkContext): OkHash {
         return hash {
             push(id)
             push(title)

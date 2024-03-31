@@ -7,7 +7,7 @@ import kotlin.concurrent.withLock
 import kotlin.coroutines.CoroutineContext
 
 internal class OkCoroutineResultWithDependencies<T>(
-    val value: T, val dependencies: List<OkHash>
+    val value: T, val dependencies: Set<OkHash>
 )
 
 suspend fun bindOkCoroutineDependency(key: OkHash) {
@@ -34,7 +34,7 @@ private class OkCoroutineDependencyBinder : CoroutineContext.Element {
         }
     }
 
-    fun dependencies() = lock.withLock { dependencies.toList() }
+    fun dependencies() = lock.withLock { dependencies.toSet() }
 
     override val key: CoroutineContext.Key<*> = Key
 

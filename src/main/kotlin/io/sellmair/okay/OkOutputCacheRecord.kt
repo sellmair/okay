@@ -7,14 +7,14 @@ internal sealed interface OkInputCacheRecord {
     val key: OkHash
     val input: OkInput
     val descriptor: OkCoroutineDescriptor<*>
-    val dependencies: List<OkHash>
+    val dependencies: Set<OkHash>
 }
 
 data class OkOutputCacheRecord<T>(
     override val key: OkHash,
     override val input: OkInput,
     override val descriptor: OkCoroutineDescriptor<T>,
-    override val dependencies: List<OkHash>,
+    override val dependencies: Set<OkHash>,
 
     val value: T,
     val output: OkOutput,
@@ -27,5 +27,5 @@ data class OkInputCacheRecordImpl(
     override val key: OkHash,
     override val input: OkInput,
     override val descriptor: OkCoroutineDescriptor<*>,
-    override val dependencies: List<OkHash>
+    override val dependencies: Set<OkHash>
 ) : OkInputCacheRecord, Serializable
