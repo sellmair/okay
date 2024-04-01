@@ -1,5 +1,4 @@
 {
-  "org.jetbrains.kotlin:kotlin-stdlib:1.9.23": false,
   "module://modules/library": {
     "isRuntime": true
   }

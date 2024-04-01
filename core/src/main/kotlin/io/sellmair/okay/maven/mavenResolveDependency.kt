@@ -40,8 +40,13 @@ suspend fun OkContext.mavenResolveDependency(
             append("/$artifact-$version.jar")
         }
 
-        URI.create(urlString).toURL().openStream()
-            .copyTo(outputFile.system().outputStream())
+        mavenResolvePom(mavenCoordinates)
+
+        URI.create(urlString).toURL().openStream().use { inputStream ->
+            outputFile.system().outputStream().use { outputStream ->
+                inputStream.copyTo(outputStream)
+            }
+        }
 
         outputFile
     }

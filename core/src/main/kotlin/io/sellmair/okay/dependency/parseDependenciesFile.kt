@@ -12,7 +12,7 @@ suspend fun OkContext.parseDependenciesFile(): OkDependenciesFile? {
 
     return memoizedCoroutine(
         describeCoroutine("parseLibsFile"),
-        input = OkInputFile(dependenciesFile)
+        input = dependenciesFile.asInput()
     ) task@{
         val file = dependenciesFile.system()
         if (!file.exists()) return@task null

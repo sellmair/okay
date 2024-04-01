@@ -5,6 +5,8 @@ import io.sellmair.okay.OkCoroutineDescriptor.Verbosity.Info
 import io.sellmair.okay.dependency.compileDependenciesClosure
 import io.sellmair.okay.dependency.runtimeDependenciesClosure
 import io.sellmair.okay.io.OkPath
+import io.sellmair.okay.utils.withClosure
+
 
 private enum class MavenResolveDependenciesScope {
     Compile, Runtime
@@ -27,6 +29,10 @@ private suspend fun OkContext.mavenResolveRuntimeDependencies(scope: MavenResolv
     ) {
         val parsedCoordinates = dependenciesClosure(scope)
             .mapNotNull { declaration -> parseMavenCoordinates(declaration.value) }
+            .withClosure<MavenCoordinates> { declaration ->
+                mavenResolvePom(declaration)?.dependencies.orEmpty().filter { it in scope }.map { it.coordinates }
+            }
+            .resolveConflicts()
 
         val resolvedDependencies = parsedCoordinates.map { coordinates ->
             async { mavenResolveDependency(mavenLibrariesDirectory, coordinates) }
@@ -39,6 +45,28 @@ private suspend fun OkContext.mavenResolveRuntimeDependencies(scope: MavenResolv
 private suspend fun OkContext.dependenciesClosure(scope: MavenResolveDependenciesScope) = when (scope) {
     MavenResolveDependenciesScope.Compile -> compileDependenciesClosure()
     MavenResolveDependenciesScope.Runtime -> runtimeDependenciesClosure()
+}
+
+private operator fun MavenResolveDependenciesScope.contains(dependency: MavenPom.MavenDependency): Boolean {
+    return when (this) {
+        MavenResolveDependenciesScope.Compile -> dependency.scope == MavenPom.MavenDependency.Scope.Compile ||
+                dependency.scope == MavenPom.MavenDependency.Scope.Provided
+
+        MavenResolveDependenciesScope.Runtime -> dependency.scope == MavenPom.MavenDependency.Scope.Runtime ||
+                dependency.scope == MavenPom.MavenDependency.Scope.Compile
+    }
+}
+
+private fun Iterable<MavenCoordinates>.resolveConflicts(): List<MavenCoordinates> {
+    val currentValues = mutableMapOf<String, MavenCoordinates>()
+    forEach { coordinates ->
+        val module = "${coordinates.group}:${coordinates.artifact}"
+        val currentCandidate = currentValues[module]
+        if (currentCandidate == null) currentValues[module] = coordinates
+        else currentValues[module] = listOf(currentCandidate, coordinates).maxBy { it.version }
+    }
+
+    return currentValues.values.toList()
 }
 
 private val mavenCoordinatesRegex = Regex("""(.*):(.*):(.*)""")

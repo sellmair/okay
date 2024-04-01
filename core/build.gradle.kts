@@ -23,6 +23,7 @@ tasks.register<Jar>("packageExecutable") {
 
     from(kotlin.target.compilations["main"].output.allOutputs)
     destinationDirectory = layout.buildDirectory.dir("executable")
+    archiveBaseName.set("okay")
 
     manifest {
         attributes["Main-Class"] = "io.sellmair.okay.OkMain"
@@ -53,9 +54,14 @@ tasks.register<JavaExec>("buildTestProject") {
 }
 
 dependencies {
+    implementation("io.ktor:ktor-client-cio:2.3.9")
+    implementation("io.ktor:ktor-client-core:2.3.9")
+    implementation("org.apache.maven:maven-model:3.9.6")
     implementation("org.jetbrains.kotlin:kotlin-compiler-embeddable:1.9.23")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    implementation("org.slf4j:slf4j-api:2.0.12")
+    implementation("org.slf4j:slf4j-jdk14:2.0.12")
 
     testImplementation(kotlin("test-junit5"))
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
