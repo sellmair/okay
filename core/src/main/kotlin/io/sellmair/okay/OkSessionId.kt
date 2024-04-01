@@ -2,10 +2,13 @@ package io.sellmair.okay
 
 import java.io.Serializable
 import java.util.UUID
+import kotlin.coroutines.CoroutineContext
 
-class OkSessionId private constructor(private val value: UUID) : Serializable {
-    companion object {
-        val current = OkSessionId(UUID.randomUUID())
+class OkSessionId private constructor(private val value: UUID) : Serializable, CoroutineContext.Element {
+    override val key get() = Key
+
+    companion object Key : CoroutineContext.Key<OkSessionId> {
+        fun random() = OkSessionId(UUID.randomUUID())
     }
 
     override fun toString(): String {
@@ -21,4 +24,10 @@ class OkSessionId private constructor(private val value: UUID) : Serializable {
     override fun hashCode(): Int {
         return value.hashCode()
     }
+}
+
+fun OkContext.currentOkSessionId() = cs.coroutineContext.currentOkSessionId()
+
+fun CoroutineContext.currentOkSessionId(): OkSessionId {
+    return get(OkSessionId) ?: error("Missing 'OkSessionId' ")
 }
