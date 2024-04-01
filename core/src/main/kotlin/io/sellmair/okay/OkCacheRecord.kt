@@ -8,6 +8,7 @@ internal sealed interface OkInputCacheRecord {
     val input: OkInput
     val descriptor: OkCoroutineDescriptor<*>
     val dependencies: Set<OkHash>
+    val session: OkSessionId
 }
 
 data class OkOutputCacheRecord<T>(
@@ -35,6 +36,7 @@ data class OkOutputCacheRecord<T>(
      * value: A hash of the file content (the file content can be retrieved from the cache using this hash)
      */
     val outputSnapshot: Map<OkPath, OkHash>,
+    override val session: OkSessionId = OkSessionId.current,
 ) : Serializable, OkInputCacheRecord
 
 
@@ -42,5 +44,6 @@ data class OkInputCacheRecordImpl(
     override val key: OkHash,
     override val input: OkInput,
     override val descriptor: OkCoroutineDescriptor<*>,
-    override val dependencies: Set<OkHash>
+    override val dependencies: Set<OkHash>,
+    override val session: OkSessionId = OkSessionId.current,
 ) : OkInputCacheRecord, Serializable
