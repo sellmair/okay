@@ -36,7 +36,7 @@ data class OkOutputCacheRecord<T>(
      * value: A hash of the file content (the file content can be retrieved from the cache using this hash)
      */
     val outputSnapshot: Map<OkPath, OkHash>,
-    override val session: OkSessionId = OkSessionId.current,
+    override val session: OkSessionId,
 ) : Serializable, OkInputCacheRecord
 
 
@@ -45,5 +45,5 @@ data class OkInputCacheRecordImpl(
     override val input: OkInput,
     override val descriptor: OkCoroutineDescriptor<*>,
     override val dependencies: Set<OkHash>,
-    override val session: OkSessionId = OkSessionId.current,
+    override val session: OkSessionId,
 ) : OkInputCacheRecord, Serializable

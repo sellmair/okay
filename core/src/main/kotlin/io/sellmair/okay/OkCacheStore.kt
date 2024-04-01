@@ -55,7 +55,8 @@ suspend fun <T> OkContext.storeCachedCoroutine(
         output = output,
         outputHash = outputHash,
         dependencies = dependencies.toSet(),
-        outputSnapshot = outputSnapshot
+        outputSnapshot = outputSnapshot,
+        session = currentOkSessionId()
     )
     @OptIn(OkUnsafe::class)
     storeCacheRecord(entry)

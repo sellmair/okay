@@ -10,7 +10,9 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 
 fun ok(body: suspend OkContext.() -> Unit) {
-    runBlocking(Dispatchers.Default + OkCoroutineStack(emptyList()) + OkCoroutineCache() + Job()) {
+    runBlocking(
+        Dispatchers.Default + OkCoroutineStack(emptyList()) + OkCoroutineCache() + OkSessionId.random() + Job()
+    ) {
         with(OkContextImpl(this)) {
             body()
         }

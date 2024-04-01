@@ -44,7 +44,7 @@ internal suspend fun OkContext.readCacheRecord(key: OkHash): OkInputCacheRecord?
         but it might not be UP-TO-DATE from the perspective of the previously stored
         coroutine as the dependencies (or outputs) might have changed.
         */
-        .takeUnless { it?.session == OkSessionId.current }
+        .takeUnless { it?.session == currentOkSessionId() }
 }
 
 /**

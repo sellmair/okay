@@ -25,12 +25,12 @@ class RunTest {
         testProjectPath("simpleRunnable").copyToRecursively(tempDir, overwrite = true, followLinks = false)
         val responseFile = tempDir.resolve("response.txt")
         runOkTest(OkRoot(tempDir)) {
-            kotlinRun(arguments = listOf(responseFile.absolutePathString()))
+            kotlinRun(arguments = listOf(responseFile.absolutePathString())).join()
             assertEquals("main", responseFile.readText())
         }
 
         runOkTest(OkRoot(tempDir)) {
-            kotlinRun("other", listOf(responseFile.absolutePathString()))
+            kotlinRun("other", listOf(responseFile.absolutePathString())).join()
             assertCacheHit(rootPath(), "kotlinCompile")
             assertEquals("other", responseFile.readText())
         }

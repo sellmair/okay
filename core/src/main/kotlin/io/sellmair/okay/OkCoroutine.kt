@@ -44,7 +44,11 @@ suspend fun <T> OkContext.memoizedCoroutine(
             }
 
             @OptIn(OkUnsafe::class)
-            storeCacheRecord(OkInputCacheRecordImpl(key, effectiveInput, descriptor, result.dependencies))
+            storeCacheRecord(
+                OkInputCacheRecordImpl(
+                    key, effectiveInput, descriptor, result.dependencies, currentOkSessionId()
+                )
+            )
             result.value
         }
     }
