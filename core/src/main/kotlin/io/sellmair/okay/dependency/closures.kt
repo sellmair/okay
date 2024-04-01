@@ -1,6 +1,7 @@
 package io.sellmair.okay.dependency
 
 import io.sellmair.okay.*
+import io.sellmair.okay.utils.log
 import io.sellmair.okay.utils.withClosure
 
 suspend fun OkContext.compileDependenciesClosure(): Set<OkDependencyDeclaration> {

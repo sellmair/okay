@@ -37,7 +37,14 @@ internal suspend fun OkContext.readCacheRecord(key: OkHash): OkInputCacheRecord?
     if (!file.system().isRegularFile()) return@withOkContext null
     ObjectInputStream(file.system().inputStream()).use { stream ->
         stream.readObject() as? OkInputCacheRecord
-    }
+    }/*
+        We should not read entries that have been written during this exact session.
+        Otherwise, the UP-TO-DATE checks have a problem:
+        Yes, the recently stored cache entry is UP-TO-DATE (because it was just stored),
+        but it might not be UP-TO-DATE from the perspective of the previously stored
+        coroutine as the dependencies (or outputs) might have changed.
+        */
+        .takeUnless { it?.session == OkSessionId.current }
 }
 
 /**

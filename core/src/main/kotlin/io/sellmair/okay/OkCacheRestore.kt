@@ -9,7 +9,6 @@ internal sealed class CacheResult
 internal data class CacheHit(val entry: OkInputCacheRecord) : CacheResult()
 internal data class CacheMiss(val dirty: OkInputCacheRecord?) : CacheResult()
 
-
 /**
  * The input from the cache entry is not further validated.
  * This is safe to be called if the [cacheKey] was recently created from the current input
