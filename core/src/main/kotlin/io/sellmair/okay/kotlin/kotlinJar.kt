@@ -25,7 +25,7 @@ suspend fun OkContext.kotlinJar(
     val manifest = buildString {
         appendLine("Manifest-Version: 1.0")
         jarManifestAttributes.forEach { (key, value) ->
-            appendLine("$key: ${value.await()}")
+            appendLine("$key: ${value.await().chunked(42).joinToString(System.lineSeparator() + " ")}")
         }
     }
 
