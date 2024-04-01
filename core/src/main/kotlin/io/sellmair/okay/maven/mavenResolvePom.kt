@@ -41,7 +41,7 @@ suspend fun OkContext.mavenResolvePom(coordinates: MavenCoordinates): MavenPom? 
     val version = coordinates.version
 
     return cachedCoroutine(
-        describeCoroutine("mavenResolvePom"),
+        describeRootCoroutine("mavenResolvePom"),
         input = OkInputString(coordinates.toString()),
         output = OkOutput.none()
     ) {
