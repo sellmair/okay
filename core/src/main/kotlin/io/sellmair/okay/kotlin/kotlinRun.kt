@@ -4,16 +4,18 @@ import io.sellmair.okay.*
 import io.sellmair.okay.OkCoroutineDescriptor.Verbosity.Info
 import io.sellmair.okay.maven.mavenResolveRuntimeDependencies
 import io.sellmair.okay.utils.log
+import kotlinx.coroutines.job
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
 import org.jetbrains.kotlin.konan.file.use
 import java.net.URLClassLoader
 import java.util.*
+import kotlin.concurrent.thread
 import kotlin.io.path.exists
 import kotlin.io.path.inputStream
 
 
-suspend fun OkContext.kotlinRun(target: String? = null, arguments: List<String> = emptyList()) = withOkStack(
+suspend fun OkContext.kotlinRun(target: String? = null, arguments: List<String> = emptyList()): Thread = withOkStack(
     describeCoroutine<Unit>("kotlinRun", verbosity = Info)
 ) {
     val mavenDependencies = async { mavenResolveRuntimeDependencies() }
@@ -52,11 +54,13 @@ suspend fun OkContext.kotlinRun(target: String? = null, arguments: List<String> 
         """.trimMargin()
     )
 
-    val loadedMainClass = loader.loadClass(className)
-    try {
-        loadedMainClass.getMethod(functionName).invoke(null)
-    } catch (t: NoSuchMethodException) {
-        loadedMainClass.getMethod(functionName, Array<String>::class.java).invoke(null, arguments.toTypedArray())
+    thread(name = "Main", contextClassLoader = loader) {
+        val loadedMainClass = loader.loadClass(className)
+        try {
+            loadedMainClass.getMethod(functionName).invoke(null)
+        } catch (t: NoSuchMethodException) {
+            loadedMainClass.getMethod(functionName, Array<String>::class.java).invoke(null, arguments.toTypedArray())
+        }
     }
 }
 

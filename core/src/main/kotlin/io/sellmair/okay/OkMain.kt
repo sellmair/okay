@@ -27,7 +27,7 @@ fun main(args: Array<String>) {
         }
 
         if (args.firstOrNull() == "run") {
-            kotlinRun(args.getOrNull(1), args.drop(2))
+            kotlinRun(args.getOrNull(1), args.drop(2)).join()
         }
 
         if (args.firstOrNull() == "jar") {

@@ -11,7 +11,7 @@ import kotlin.coroutines.EmptyCoroutineContext
 
 fun ok(body: suspend OkContext.() -> Unit) {
     runBlocking(Dispatchers.Default + OkCoroutineStack(emptyList()) + OkCoroutineCache() + Job()) {
-        with(OkContextImpl(CoroutineScope(coroutineContext))) {
+        with(OkContextImpl(this)) {
             body()
         }
     }
@@ -56,5 +56,7 @@ suspend fun <T> OkContext.withOkContext(
     return okContext.async { action(this@async) }.await()
 }
 
-private class OkContextImpl(override val cs: CoroutineScope) : OkContext
+private class OkContextImpl(
+    override val cs: CoroutineScope
+) : OkContext
 
