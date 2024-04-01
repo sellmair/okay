@@ -35,21 +35,14 @@ class SampleProjectMultiModuleTest {
 
     @Test
     fun `test - run`() = runOkTest(OkRoot(projectDir)) {
-        okClean()
-        clearLogs()
-
         kotlinRun()
         assertContainsLog("modules/library", "kotlinCompile", "Compiling Kotlin")
         assertContainsLog("modules/utils", "kotlinCompile", "Compiling Kotlin")
         assertContainsLog("<root>", "kotlinCompile", "Compiling Kotlin")
-        clearLogs()
     }
 
     @Test
     fun `test - package`() = runOkTest(OkRoot(projectDir)) {
-        okClean()
-        clearLogs()
-
         kotlinPackage()
         assertContainsLog("modules/library", "kotlinCompile", "Compiling Kotlin")
         assertContainsLog("modules/utils", "kotlinCompile", "Compiling Kotlin")
