@@ -30,7 +30,9 @@ suspend fun OkContext.kotlinCompile(
 ): OkPath {
     return cachedCoroutine(
         describeCoroutine("kotlinCompile", verbosity = Info),
-        input = sources.asInput() + OkInputs(dependencies.map { OkInputFile(it) }),
+        input = sources.asInput() +
+                OkInputs(dependencies.map { it.asInput() }) +
+                OkInputString(moduleName()),
         output = OkOutputs(listOf(OkOutputDirectory(outputDirectory)))
     ) {
         log("Compiling Kotlin")
@@ -40,6 +42,7 @@ suspend fun OkContext.kotlinCompile(
 
         val args = K2JVMCompilerArguments()
         args.noStdlib = true
+        args.moduleName = moduleName()
         args.classpathAsList = dependencies.map { it.system().toFile() }
         args.freeArgs += sources.resolve(ctx).map { it.system().absolutePathString() }
         args.destinationAsFile = outputDirectory.system().toFile()
