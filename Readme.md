@@ -20,44 +20,44 @@ To install the build tool, please execute
 ### Build the test project (and it's a submodule 'library')
 
 ```shell
-cd testProject
+cd samples/multiModule
 okay build
 ```
 
 ### Run code from the test project
 
 ```shell
-cd testProject
+cd samples/multiModule
 okay run
 ```
 
 ### Run different main method from the test project
 
 ```shell
-cd testProject
+cd samples/multiModule
 okay run echo
 ```
 
 ### Run different main method from the test project (and provide params to the main method)
 
 ```shell
-cd testProject
+cd samples/multiModule
 okay run echo firstArgument secondArgument thirdArgument="is a charm"
 ```
 
 ### Build/Package an executable distribution
 ```shell
-cd testProject
+cd samples/multiModule
 okay package
 ```
 
 Execute it:
 ```shell
-java -jar testProject/build/package/testProject.jar
+java -jar samples/multiModule/build/application/multiModule.jar
 ```
 
 ```shell
-cd testProject
+cd samples/multiModule
 okay run echo firstArgument secondArgument thirdArgument="is a charm"
 ```
 
