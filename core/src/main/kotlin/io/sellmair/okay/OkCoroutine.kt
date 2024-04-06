@@ -132,9 +132,13 @@ private suspend fun <T> OkContext.runCoroutine(
     }
 
     storeCachedCoroutine(
-        descriptor, input, inputHash, output, resultWithDependencies.value, resultWithDependencies.dependencies
+        descriptor = descriptor,
+        input = input,
+        inputHash = inputHash,
+        output = output,
+        outputValue = resultWithDependencies.value,
+        dependencies = resultWithDependencies.dependencies
     )
-
 
     return resultWithDependencies.value
 }
