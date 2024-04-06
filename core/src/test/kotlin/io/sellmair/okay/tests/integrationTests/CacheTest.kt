@@ -5,10 +5,7 @@ import io.sellmair.okay.kotlin.kotlinCompile
 import io.sellmair.okay.kotlin.kotlinPackage
 import io.sellmair.okay.path
 import io.sellmair.okay.rootPath
-import io.sellmair.okay.utils.assertCacheHit
-import io.sellmair.okay.utils.assertCacheMiss
-import io.sellmair.okay.utils.runOkTest
-import io.sellmair.okay.utils.testProjectPath
+import io.sellmair.okay.utils.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
@@ -85,11 +82,13 @@ class CacheTest {
         runOkTest(OkRoot(tempDir)) {
             kotlinPackage()
             assertCacheMiss(rootPath(), "kotlinPackage")
+            assertNoDuplicateLogs()
         }
 
         runOkTest(OkRoot(tempDir)) {
             kotlinPackage()
             assertCacheHit(rootPath(), "kotlinPackage")
+            assertNoDuplicateLogs()
         }
 
         tempDir.resolve("moduleB/src/new.kt").apply {
@@ -99,6 +98,7 @@ class CacheTest {
         runOkTest(OkRoot(tempDir)) {
             kotlinPackage()
             assertCacheMiss(rootPath(), "kotlinPackage")
+            assertNoDuplicateLogs()
         }
     }
 }

@@ -1,5 +1,6 @@
 package io.sellmair.okay
 
+import io.sellmair.okay.input.OkInput
 import io.sellmair.okay.io.OkPath
 import java.io.Serializable
 import kotlin.reflect.typeOf
@@ -10,12 +11,12 @@ data class OkCoroutineDescriptor<T>(
     val module: OkPath,
     val verbosity: Verbosity,
     val signatureOfT: String
-) : Serializable, OkInput() {
+) : Serializable, OkInput {
     enum class Verbosity {
         Silent, Debug, Info
     }
 
-    override suspend fun cacheKey(ctx: OkContext): OkHash {
+    override suspend fun currentHash(ctx: OkContext): OkHash {
         return hash {
             push(id)
             push(title)

@@ -1,5 +1,6 @@
 package io.sellmair.okay
 
+import io.sellmair.okay.input.OkInput
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 import kotlin.coroutines.CoroutineContext

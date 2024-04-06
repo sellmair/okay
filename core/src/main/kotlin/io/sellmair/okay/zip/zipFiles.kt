@@ -1,7 +1,11 @@
 package io.sellmair.okay.zip
 
 import io.sellmair.okay.*
+import io.sellmair.okay.input.OkInputFile
+import io.sellmair.okay.input.asInput
+import io.sellmair.okay.input.plus
 import io.sellmair.okay.io.OkPath
+import io.sellmair.okay.output.OkOutputFile
 import java.nio.file.Files
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
@@ -30,7 +34,7 @@ suspend fun OkContext.zipFiles(
 
     return cachedCoroutine(
         descriptor = describeCoroutine("zip", verbosity = OkCoroutineDescriptor.Verbosity.Debug),
-        input = OkInputs(files.values.map { OkInputFile(it) }) + OkHashInput(layoutInputHash),
+        input = files.values.map { OkInputFile(it) }.asInput() + layoutInputHash.asInput(),
         output = OkOutputFile(zipFile)
     ) {
         zipFile.system().createParentDirectories()

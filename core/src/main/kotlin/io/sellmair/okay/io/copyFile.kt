@@ -1,6 +1,8 @@
 package io.sellmair.okay.io
 
 import io.sellmair.okay.*
+import io.sellmair.okay.input.asInput
+import io.sellmair.okay.output.asOutput
 import kotlin.io.path.copyTo
 
 suspend fun OkContext.copyFile(from: OkPath, to: OkPath): OkPath {
