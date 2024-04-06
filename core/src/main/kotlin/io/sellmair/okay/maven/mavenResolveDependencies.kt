@@ -7,12 +7,7 @@ import io.sellmair.okay.dependency.runtimeDependenciesClosure
 import io.sellmair.okay.input.OkInput
 import io.sellmair.okay.io.OkPath
 import io.sellmair.okay.output.OkOutput
-import io.sellmair.okay.utils.withClosure
 
-
-private enum class MavenResolveDependenciesScope {
-    Compile, Runtime
-}
 
 suspend fun OkContext.mavenResolveCompileDependencies(): List<OkPath> {
     return mavenResolveRuntimeDependencies(MavenResolveDependenciesScope.Compile)
@@ -31,12 +26,11 @@ private suspend fun OkContext.mavenResolveRuntimeDependencies(scope: MavenResolv
     ) {
         val parsedCoordinates = dependenciesClosure(scope)
             .mapNotNull { declaration -> parseMavenCoordinates(declaration.value) }
-            .withClosure<MavenCoordinates> { declaration ->
-                mavenResolvePom(declaration)?.dependencies.orEmpty().filter { it in scope }.map { it.coordinates }
-            }
+
+        val allDependencies = mavenResolveDependencyTree(parsedCoordinates, scope)
             .resolveConflicts()
 
-        val resolvedDependencies = parsedCoordinates.map { coordinates ->
+        val resolvedDependencies = allDependencies.map { coordinates ->
             async { mavenResolveDependency(mavenLibrariesDirectory, coordinates) }
         }.awaitAll()
 
@@ -47,16 +41,6 @@ private suspend fun OkContext.mavenResolveRuntimeDependencies(scope: MavenResolv
 private suspend fun OkContext.dependenciesClosure(scope: MavenResolveDependenciesScope) = when (scope) {
     MavenResolveDependenciesScope.Compile -> compileDependenciesClosure()
     MavenResolveDependenciesScope.Runtime -> runtimeDependenciesClosure()
-}
-
-private operator fun MavenResolveDependenciesScope.contains(dependency: MavenPom.MavenDependency): Boolean {
-    return when (this) {
-        MavenResolveDependenciesScope.Compile -> dependency.scope == MavenPom.MavenDependency.Scope.Compile ||
-                dependency.scope == MavenPom.MavenDependency.Scope.Provided
-
-        MavenResolveDependenciesScope.Runtime -> dependency.scope == MavenPom.MavenDependency.Scope.Runtime ||
-                dependency.scope == MavenPom.MavenDependency.Scope.Compile
-    }
 }
 
 private fun Iterable<MavenCoordinates>.resolveConflicts(): List<MavenCoordinates> {
