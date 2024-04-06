@@ -12,6 +12,7 @@ fun runOkTest(
     block: suspend OkContext.() -> Unit
 ) {
     runTest {
+        println("Running ok test")
         ok {
             withOkContext(OkTestLogger() + OkTestCoroutineCacheHook() + coroutineContext) {
                 block()

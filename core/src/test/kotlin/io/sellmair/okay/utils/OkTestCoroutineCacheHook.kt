@@ -1,9 +1,9 @@
 package io.sellmair.okay.utils
 
-import io.sellmair.okay.CacheMiss
-import io.sellmair.okay.CacheResult
+import io.sellmair.okay.*
+import io.sellmair.okay.OkCacheMiss
+import io.sellmair.okay.OkCacheResult
 import io.sellmair.okay.OkCoroutineCacheHook
-import io.sellmair.okay.OkCoroutineDescriptor
 import io.sellmair.okay.io.OkPath
 import kotlinx.coroutines.currentCoroutineContext
 import java.util.concurrent.locks.ReentrantLock
@@ -14,9 +14,9 @@ internal class OkTestCoroutineCacheHook : OkCoroutineCacheHook {
     private val records = mutableListOf<Record>()
     private val lock = ReentrantLock()
 
-    data class Record(val descriptor: OkCoroutineDescriptor<*>, val result: CacheResult)
+    data class Record(val descriptor: OkCoroutineDescriptor<*>, val result: OkCacheResult)
 
-    override fun onCacheResult(descriptor: OkCoroutineDescriptor<*>, result: CacheResult) {
+    override fun onCacheResult(descriptor: OkCoroutineDescriptor<*>, result: OkCacheResult) {
         lock.withLock { records.add(Record(descriptor, result)) }
     }
 
@@ -31,20 +31,22 @@ internal suspend fun cacheRecords(): List<OkTestCoroutineCacheHook.Record> =
 internal suspend fun clearCacheRecords() =
     (currentCoroutineContext()[OkCoroutineCacheHook] as OkTestCoroutineCacheHook).clearRecords()
 
-internal suspend fun assertCacheMiss(module: OkPath, id: String): CacheMiss {
+internal suspend fun assertCacheMiss(module: OkPath, id: String): OkCacheMiss {
     val record = assertCacheRecord(module, id)
-    if (record.result !is CacheMiss) {
+    if (record.result !is OkCacheMiss) {
         fail("Expected CacheMiss in module '$module' for '$id'")
     }
 
     return record.result
 }
 
-internal suspend fun assertCacheHit(module: OkPath, id: String) {
+internal suspend fun assertCacheUpToDate(module: OkPath, id: String) {
     val record = assertCacheRecord(module, id)
-    val result = record.result
-    if (result is CacheMiss) {
-        fail("Expected CacheHit in module '$module' for '$id'. Dirty: ${result.dirty}")
+    when (val result = record.result) {
+        is OkCacheMiss -> fail("Expected CacheHit in module '$module' for '$id'. Dirty: ${result.dirty}")
+        is OkCacheHit -> if (result.restored.isNotEmpty()) {
+            fail("Expected 'UP-TO-DATE' in module '$module' for '$id'. Found $result")
+        }
     }
 }
 
