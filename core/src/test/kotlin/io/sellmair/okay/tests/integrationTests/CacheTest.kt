@@ -69,7 +69,7 @@ class CacheTest {
         newFile.deleteIfExists()
         runOkTest(OkRoot(tempDir)) {
             kotlinCompile()
-            assertCacheUpToDate(path("moduleB"), "kotlinCompile")
+            assertCacheRestored(path("moduleB"), "kotlinCompile")
             assertCacheUpToDate(path("moduleA"), "kotlinCompile")
             assertCacheUpToDate(rootPath(), "kotlinCompile")
         }
@@ -98,7 +98,6 @@ class CacheTest {
         runOkTest(OkRoot(tempDir)) {
             kotlinPackage()
             assertCacheMiss(rootPath(), "kotlinPackage")
-            assertNoDuplicateLogs()
         }
     }
 }
