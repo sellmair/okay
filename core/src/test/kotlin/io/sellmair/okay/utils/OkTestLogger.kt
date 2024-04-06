@@ -37,3 +37,17 @@ internal suspend fun assertContainsLog(module: String, title: String, value: Str
     if (logs().contains(OkTestLogger.Log(module, title, value))) return
     throw AssertionError("Log not found: module=$module, title=$title, value=$value")
 }
+
+internal suspend fun assertNoDuplicateLogs() {
+    val logs = logs()
+    val grouped = logs.groupBy { it }.mapValues { (_, all) -> all.size }
+    val duplicates = grouped.filter { (log, count) -> count > 1 }
+    if (duplicates.isEmpty()) return
+
+    buildString {
+        appendLine("Duplicate logs found:")
+        duplicates.forEach { (log, count) ->
+            appendLine("Found $count times: $log")
+        }
+    }
+}
