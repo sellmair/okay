@@ -114,8 +114,8 @@ private fun <T> OkContext.restoreOrLaunchTask(
 
         @Suppress("UNCHECKED_CAST")
         when (cacheResult) {
-            is CacheHit -> cacheResult.entry.outputValue as T
-            is CacheMiss -> runCoroutine(key, descriptor, input, output, body)
+            is OkCacheHit -> cacheResult.record.outputValue as T
+            is OkCacheMiss -> runCoroutine(key, descriptor, input, output, body)
         }
     }
 }

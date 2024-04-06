@@ -4,7 +4,7 @@ import kotlin.coroutines.CoroutineContext
 
 internal interface OkCoroutineCacheHook : CoroutineContext.Element {
 
-    fun onCacheResult(descriptor: OkCoroutineDescriptor<*>, result: CacheResult)
+    fun onCacheResult(descriptor: OkCoroutineDescriptor<*>, result: OkCacheResult)
 
     override val key get() = Key
 

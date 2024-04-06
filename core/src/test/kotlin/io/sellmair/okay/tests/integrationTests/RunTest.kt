@@ -3,7 +3,7 @@ package io.sellmair.okay.tests.integrationTests
 import io.sellmair.okay.OkRoot
 import io.sellmair.okay.kotlin.kotlinRun
 import io.sellmair.okay.rootPath
-import io.sellmair.okay.utils.assertCacheHit
+import io.sellmair.okay.utils.assertCacheUpToDate
 import io.sellmair.okay.utils.runOkTest
 import io.sellmair.okay.utils.testProjectPath
 import org.junit.jupiter.api.Test
@@ -31,7 +31,7 @@ class RunTest {
 
         runOkTest(OkRoot(tempDir)) {
             kotlinRun("other", listOf(responseFile.absolutePathString())).join()
-            assertCacheHit(rootPath(), "kotlinCompile")
+            assertCacheUpToDate(rootPath(), "kotlinCompile")
             assertEquals("other", responseFile.readText())
         }
     }

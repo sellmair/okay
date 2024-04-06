@@ -29,7 +29,7 @@ class CacheTest {
 
         runOkTest(OkRoot(tempDir)) {
             kotlinCompile()
-            assertCacheHit(rootPath(), "kotlinCompile")
+            assertCacheUpToDate(rootPath(), "kotlinCompile")
         }
 
         fooKt.writeText("class Bar")
@@ -40,7 +40,7 @@ class CacheTest {
 
         runOkTest(OkRoot(tempDir)) {
             kotlinCompile()
-            assertCacheHit(rootPath(), "kotlinCompile")
+            assertCacheUpToDate(rootPath(), "kotlinCompile")
         }
     }
 
@@ -63,15 +63,15 @@ class CacheTest {
             assertCacheMiss(path("moduleA"), "kotlinCompile")
 
             /* Hit expected as moduleB is not exported in moduleA*/
-            assertCacheHit(rootPath(), "kotlinCompile")
+            assertCacheUpToDate(rootPath(), "kotlinCompile")
         }
 
         newFile.deleteIfExists()
         runOkTest(OkRoot(tempDir)) {
             kotlinCompile()
-            assertCacheHit(path("moduleB"), "kotlinCompile")
-            assertCacheHit(path("moduleA"), "kotlinCompile")
-            assertCacheHit(rootPath(), "kotlinCompile")
+            assertCacheUpToDate(path("moduleB"), "kotlinCompile")
+            assertCacheUpToDate(path("moduleA"), "kotlinCompile")
+            assertCacheUpToDate(rootPath(), "kotlinCompile")
         }
     }
 
@@ -87,7 +87,7 @@ class CacheTest {
 
         runOkTest(OkRoot(tempDir)) {
             kotlinPackage()
-            assertCacheHit(rootPath(), "kotlinPackage")
+            assertCacheUpToDate(rootPath(), "kotlinPackage")
             assertNoDuplicateLogs()
         }
 

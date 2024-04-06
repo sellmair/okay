@@ -7,9 +7,24 @@ import io.sellmair.okay.output.OkOutputs
 import io.sellmair.okay.utils.*
 import kotlin.io.path.*
 
-internal sealed class CacheResult
-internal data class CacheHit(val entry: OkCacheRecord<*>) : CacheResult()
-internal data class CacheMiss(val dirty: OkCacheRecord<*>?) : CacheResult()
+internal sealed class OkCacheResult
+
+internal data class OkCacheHit(
+    val record: OkCacheRecord<*>,
+    val upToDate: List<OkCacheRecord<*>> = emptyList(),
+    val restored: List<OkCacheRecord<*>> = emptyList()
+) : OkCacheResult() {
+    override fun toString(): String {
+        return "CacheHit(" +
+            "upToDate=${upToDate.joinToString { it.descriptor.id }}, " +
+            "restored=${restored.joinToString { it.descriptor.id }})"
+    }
+}
+
+internal data class OkCacheMiss(
+    val missing: List<OkHash> = emptyList(),
+    val dirty: List<OkCacheRecord<*>> = emptyList()
+) : OkCacheResult()
 
 /**
  * The input from the cache entry is not further validated.
@@ -17,9 +32,9 @@ internal data class CacheMiss(val dirty: OkCacheRecord<*>?) : CacheResult()
  */
 internal suspend fun OkContext.tryRestoreCachedCoroutineUnchecked(
     cacheKey: OkHash
-): CacheResult = withOkContext(okCacheDispatcher) {
+): OkCacheResult = withOkContext(okCacheDispatcher) {
     val cacheEntry = readCacheRecord(cacheKey) ?: run {
-        return@withOkContext CacheMiss(null)
+        return@withOkContext OkCacheMiss(dirty = emptyList())
     }
 
     withOkStack(cacheEntry.descriptor) {
@@ -30,42 +45,47 @@ internal suspend fun OkContext.tryRestoreCachedCoroutineUnchecked(
 /**
  * Will only restore the cache from the key, if the inputs were unchanged.
  */
-private suspend fun OkContext.tryRestoreCachedCoroutineChecked(cacheKey: OkHash): CacheResult {
-    val entry = readCacheRecord(cacheKey) ?: return CacheMiss(null)
+private suspend fun OkContext.tryRestoreCachedCoroutineChecked(cacheKey: OkHash): OkCacheResult {
+    val entry = readCacheRecord(cacheKey) ?: return OkCacheMiss(missing = listOf(cacheKey))
     return withOkStack(entry.descriptor) {
         val inputState = entry.input.currentHash(ctx)
         if (inputState != cacheKey) {
             log("Cache miss. Expected: ($cacheKey), found: ($inputState)")
-            return@withOkStack CacheMiss(entry)
+            return@withOkStack OkCacheMiss(dirty = listOf(entry))
         }
         tryRestoreCacheRecord(entry)
     }
 }
 
 private suspend fun OkContext.tryRestoreCacheRecord(
-    cacheEntry: OkCacheRecord<*>
-): CacheResult {
+    record: OkCacheRecord<*>
+): OkCacheResult {
     /* Launch & await restore of dependencies */
-    cacheEntry.dependencies.map { dependencyCacheKey ->
-        val restoredDependencyResult = tryRestoreCachedCoroutineChecked(dependencyCacheKey)
-        if (restoredDependencyResult is CacheMiss) {
-            return restoredDependencyResult
-        }
+    val dependencyResult = record.dependencies.fold<_, OkCacheResult>(OkCacheHit(record)) { result, dependencyKey ->
+        result + tryRestoreCachedCoroutineChecked(dependencyKey)
     }
 
-    if (cacheEntry.output != null) {
-        if (cacheEntry.output.currentHash(ctx) != cacheEntry.outputHash) {
-            if (cacheEntry.descriptor.verbosity >= OkCoroutineDescriptor.Verbosity.Info) {
-                log("${ansiGreen}UP-TO-DATE${ansiReset} (${cacheEntry.inputHash}) -> (${cacheEntry.outputHash})")
-            }
-        } else {
-            restoreFilesFromCache(cacheEntry)
-            if (cacheEntry.descriptor.verbosity >= OkCoroutineDescriptor.Verbosity.Info) {
-                log("${ansiYellow}Cache Restored$ansiReset (${cacheEntry.inputHash}) -> (${cacheEntry.outputHash})")
-            }
+    if (dependencyResult !is OkCacheHit) return dependencyResult
+    if (record.output == null) return dependencyResult
+
+    return if (record.output.currentHash(ctx) == record.outputHash) {
+        if (record.descriptor.verbosity >= OkCoroutineDescriptor.Verbosity.Info) {
+            log("${ansiGreen}UP-TO-DATE${ansiReset} (${record.inputHash}) -> (${record.outputHash})")
         }
+        dependencyResult.copy(
+            record = record,
+            upToDate = dependencyResult.upToDate + record
+        )
+    } else {
+        restoreFilesFromCache(record)
+        if (record.descriptor.verbosity >= OkCoroutineDescriptor.Verbosity.Info) {
+            log("${ansiYellow}Cache Restored$ansiReset (${record.inputHash}) -> (${record.outputHash})")
+        }
+        dependencyResult.copy(
+            record = record,
+            restored = dependencyResult.restored + record
+        )
     }
-    return CacheHit(cacheEntry)
 }
 
 private fun OkContext.restoreFilesFromCache(
@@ -80,6 +100,26 @@ private fun OkContext.restoreFilesFromCache(
         if (blob.isRegularFile()) {
             path.system().createParentDirectories()
             blob.copyTo(path.system(), true)
+        }
+    }
+}
+
+private operator fun OkCacheResult.plus(other: OkCacheResult): OkCacheResult {
+    return when (this) {
+        is OkCacheHit -> when (other) {
+            is OkCacheMiss -> other
+            is OkCacheHit -> copy(
+                upToDate = this.upToDate + other.upToDate,
+                restored = this.restored + other.restored
+            )
+        }
+
+        is OkCacheMiss -> when (other) {
+            is OkCacheHit -> this
+            is OkCacheMiss -> copy(
+                missing = this.missing + other.missing,
+                dirty = this.dirty + other.dirty
+            )
         }
     }
 }
