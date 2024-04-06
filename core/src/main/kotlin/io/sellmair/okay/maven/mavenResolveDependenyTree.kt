@@ -23,29 +23,24 @@ internal suspend fun OkContext.mavenResolveDependencyTree(
         }.asInput(),
         output = OkOutput.none()
     ) {
-        val resolvedLock = ReentrantLock()
-        val resolved = mutableSetOf(*declaredDependencies.toTypedArray())
+        withOkContext(downloadDispatcher) {
+            val results = declaredDependencies.toMutableSet()
+            var queue = declaredDependencies
 
-        fun CoroutineScope.launchResolve(coordinates: MavenCoordinates): Job = launch(downloadDispatcher) {
-            val dependencies = mavenResolvePom(coordinates)?.dependencies.orEmpty()
-                .filter { it in scope }
-                .map { it.coordinates }
-
-            resolvedLock.withLock {
-                dependencies.forEach { dependency ->
-                    if (resolved.add(dependency)) {
-                        launchResolve(dependency)
+            while (queue.isNotEmpty()) {
+                val dependencies = queue.map { coordinates ->
+                    async {
+                        mavenResolvePom(coordinates)?.dependencies.orEmpty()
+                            .filter { it in scope }.map { it.coordinates }
                     }
+                }.awaitAll().flatten()
+
+                queue = dependencies.filter { coordinates ->
+                    results.add(coordinates)
                 }
             }
-        }
 
-        coroutineScope {
-            declaredDependencies.forEach { dependency ->
-                launchResolve(dependency)
-            }
+            results.toList()
         }
-
-        resolved.toList()
     }
 }

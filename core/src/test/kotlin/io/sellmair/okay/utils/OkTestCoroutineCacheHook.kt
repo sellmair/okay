@@ -50,6 +50,19 @@ internal suspend fun assertCacheUpToDate(module: OkPath, id: String) {
     }
 }
 
+internal suspend fun assertCacheRestored(module: OkPath, id: String) {
+    val record = assertCacheRecord(module, id)
+    when (val result = record.result) {
+        is OkCacheMiss -> fail("Expected CacheHit in module '$module' for '$id'. Dirty: ${result.dirty}")
+        is OkCacheHit -> {
+            if (result.restored.none { it.descriptor.id == id }) {
+                fail("Expected $id to be 'restored'. Found $result")
+            }
+        }
+    }
+}
+
+
 internal suspend fun assertCacheRecord(module: OkPath, id: String): OkTestCoroutineCacheHook.Record {
     val matches = cacheRecords()
         .filter { it.descriptor.module == module && it.descriptor.id == id }

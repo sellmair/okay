@@ -29,7 +29,7 @@ suspend fun OkContext.kotlinCompile(): OkPath {
     val kotlinSources = modulePath("src").walk().withExtension("kt")
 
     val dependencies = mavenResolveCompileDependencies() +
-            kotlinCompileDependencies()
+        kotlinCompileDependencies()
 
     return kotlinCompile(kotlinSources, dependencies, modulePath("build/classes"))
 }
@@ -42,8 +42,8 @@ suspend fun OkContext.kotlinCompile(
     return cachedCoroutine(
         describeCoroutine("kotlinCompile", verbosity = Info),
         input = sources.asInput() +
-                OkInputs(dependencies.map { it.asInput() }),
-        output = OkOutputs(listOf(OkOutputDirectory(outputDirectory)))
+            dependencies.map { it.asInput() }.asInput(),
+        output = OkOutputDirectory(outputDirectory)
     ) {
         log("Compiling Kotlin")
 
