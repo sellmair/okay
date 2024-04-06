@@ -1,6 +1,7 @@
 package io.sellmair.okay.dependency
 
 import io.sellmair.okay.*
+import io.sellmair.okay.input.asInput
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
 import kotlin.io.path.exists

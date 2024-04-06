@@ -4,9 +4,15 @@ import io.sellmair.okay.*
 import io.sellmair.okay.OkCoroutineDescriptor.Verbosity.Info
 import io.sellmair.okay.dependency.moduleOrNull
 import io.sellmair.okay.dependency.runtimeDependenciesClosure
+import io.sellmair.okay.input.OkInput
+import io.sellmair.okay.input.OkInputFile
+import io.sellmair.okay.input.OkInputProperty
+import io.sellmair.okay.input.OkInputs
 import io.sellmair.okay.io.OkPath
 import io.sellmair.okay.io.copyFile
 import io.sellmair.okay.maven.mavenResolveRuntimeDependencies
+import io.sellmair.okay.output.OkOutput
+import io.sellmair.okay.output.OkOutputFile
 import io.sellmair.okay.utils.ansiGreen
 import io.sellmair.okay.utils.ansiReset
 import io.sellmair.okay.utils.log
@@ -100,7 +106,7 @@ suspend fun OkContext.packageStartScript(packageDir: OkPath): OkPath {
 
     return cachedCoroutine(
         describeCoroutine("packageStartScript"),
-        input = OkInputString(scriptContent),
+        input = OkInputProperty("scriptContent", scriptContent),
         output = OkOutputFile(scriptFile)
     ) {
         scriptFile.system().createParentDirectories()

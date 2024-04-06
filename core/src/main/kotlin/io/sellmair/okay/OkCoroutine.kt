@@ -1,5 +1,8 @@
 package io.sellmair.okay
 
+import io.sellmair.okay.input.OkInput
+import io.sellmair.okay.input.plus
+import io.sellmair.okay.output.OkOutput
 import kotlinx.coroutines.*
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
@@ -38,15 +41,15 @@ suspend fun <T> OkContext.memoizedCoroutine(
 ): T {
     val effectiveInput = descriptor + input
     val coroutine = cs.coroutineContext.okCoroutineCache.getOrPut(effectiveInput) {
-        launchOkCoroutine(effectiveInput) { key ->
+        launchOkCoroutine(effectiveInput) { inputHash ->
             val result = withOkStack(descriptor) {
                 withOkCoroutineDependencies { OkScope { body() } }
             }
 
             @OptIn(OkUnsafe::class)
             storeCacheRecord(
-                OkInputCacheRecordImpl(
-                    key, effectiveInput, descriptor, result.dependencies, currentOkSessionId()
+                OkCacheRecord(
+                    currentOkSessionId(), descriptor, effectiveInput, inputHash, result.dependencies
                 )
             )
             result.value
@@ -111,14 +114,14 @@ private fun <T> OkContext.restoreOrLaunchTask(
 
         @Suppress("UNCHECKED_CAST")
         when (cacheResult) {
-            is CacheHit -> (cacheResult.entry as OkOutputCacheRecord<*>).value as T
+            is CacheHit -> cacheResult.entry.outputValue as T
             is CacheMiss -> runCoroutine(key, descriptor, input, output, body)
         }
     }
 }
 
 private suspend fun <T> OkContext.runCoroutine(
-    inputCacheKey: OkHash,
+    inputHash: OkHash,
     descriptor: OkCoroutineDescriptor<T>,
     input: OkInput,
     output: OkOutput,
@@ -129,8 +132,9 @@ private suspend fun <T> OkContext.runCoroutine(
     }
 
     storeCachedCoroutine(
-        inputCacheKey, resultWithDependencies.value, descriptor, input, output, resultWithDependencies.dependencies
+        descriptor, input, inputHash, output, resultWithDependencies.value, resultWithDependencies.dependencies
     )
+
 
     return resultWithDependencies.value
 }
@@ -138,9 +142,9 @@ private suspend fun <T> OkContext.runCoroutine(
 private fun <T> OkContext.launchOkCoroutine(
     input: OkInput,
     coroutineContext: CoroutineContext = EmptyCoroutineContext,
-    body: suspend (key: OkHash) -> T
+    body: suspend (inputHash: OkHash) -> T
 ): OkCoroutine<T> {
-    val key = cs.async { input.cacheKey(ctx) }
+    val key = cs.async { input.currentHash(ctx) }
     return OkCoroutine(
         key = key,
         value = cs.async(coroutineContext, start = CoroutineStart.LAZY) {

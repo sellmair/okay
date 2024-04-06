@@ -24,6 +24,7 @@ interface HashBuilder {
     fun push(value: String)
     fun push(value: ByteArray)
     fun push(value: ByteArray, offset: Int, length: Int)
+    fun push(value: Boolean)
     fun push(value: Byte)
     fun push(value: OkHash)
     fun push(value: OkPath)
@@ -48,6 +49,10 @@ inline fun hash(builder: HashBuilder.() -> Unit): OkHash {
     return HashBuilder().also(builder).build()
 }
 
+fun Iterable<OkHash>.hash(): OkHash = hash {
+    forEach { value -> push(value) }
+}
+
 class HashBuilderImpl(
     private val messageDigest: MessageDigest = MessageDigest.getInstance("SHA-256")
 ) : HashBuilder {
@@ -62,6 +67,10 @@ class HashBuilderImpl(
 
     override fun push(value: ByteArray, offset: Int, length: Int) {
         messageDigest.update(value, offset, length)
+    }
+
+    override fun push(value: Boolean) {
+        messageDigest.update(if (value) 1 else 0)
     }
 
     override fun push(value: Byte) {

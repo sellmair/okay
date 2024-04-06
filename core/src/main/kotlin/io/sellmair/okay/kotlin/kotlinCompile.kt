@@ -4,11 +4,16 @@ package io.sellmair.okay.kotlin
 
 import io.sellmair.okay.*
 import io.sellmair.okay.OkCoroutineDescriptor.Verbosity.Info
+import io.sellmair.okay.input.OkInputs
+import io.sellmair.okay.input.asInput
+import io.sellmair.okay.input.plus
 import io.sellmair.okay.io.OkFileCollection
 import io.sellmair.okay.io.OkPath
 import io.sellmair.okay.io.walk
 import io.sellmair.okay.io.withExtension
 import io.sellmair.okay.maven.mavenResolveCompileDependencies
+import io.sellmair.okay.output.OkOutputDirectory
+import io.sellmair.okay.output.OkOutputs
 import io.sellmair.okay.utils.log
 import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
 import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
@@ -37,8 +42,7 @@ suspend fun OkContext.kotlinCompile(
     return cachedCoroutine(
         describeCoroutine("kotlinCompile", verbosity = Info),
         input = sources.asInput() +
-                OkInputs(dependencies.map { it.asInput() }) +
-                OkInputString(moduleName()),
+                OkInputs(dependencies.map { it.asInput() }),
         output = OkOutputs(listOf(OkOutputDirectory(outputDirectory)))
     ) {
         log("Compiling Kotlin")

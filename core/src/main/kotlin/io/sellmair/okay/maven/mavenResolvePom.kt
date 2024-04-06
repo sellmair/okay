@@ -6,6 +6,8 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.utils.io.jvm.javaio.*
 import io.sellmair.okay.*
+import io.sellmair.okay.input.OkInputString
+import io.sellmair.okay.output.OkOutput
 import io.sellmair.okay.utils.ansiGreen
 import io.sellmair.okay.utils.ansiReset
 import io.sellmair.okay.utils.log
