@@ -3,18 +3,22 @@ package io.sellmair.okay
 import io.sellmair.okay.input.OkInput
 import io.sellmair.okay.io.OkPath
 import io.sellmair.okay.output.OkOutput
-import java.io.Serializable
+import io.sellmair.okay.serialization.Base64Serializer
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
 
-data class OkCacheRecord<T>(
+@Serializable
+class OkCacheRecord(
     val session: OkSessionId,
-    val descriptor: OkCoroutineDescriptor<T>,
+    val descriptor: OkCoroutineDescriptor<@Contextual Any?>,
     val input: OkInput,
     val inputHash: OkHash,
     val dependencies: Set<OkHash>,
 
     val output: OkOutput? = null,
     val outputHash: OkHash? = null,
-    val outputValue: T? = null,
+    @Serializable(Base64Serializer::class)
+    val payload: ByteArray? = null,
     /**
      * Represents the state of all regular files associated with the cache record.
      * key: The path to the captured file
@@ -22,6 +26,6 @@ data class OkCacheRecord<T>(
      */
     val outputFiles: Map<OkPath, OkHash>? = null
 
-) : Serializable
+)
 
 

@@ -3,7 +3,9 @@ package io.sellmair.okay.input
 import io.sellmair.okay.OkContext
 import io.sellmair.okay.OkHash
 import io.sellmair.okay.hash
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class OkInputs(val values: List<OkInput>) : OkInput {
     override suspend fun currentHash(ctx: OkContext): OkHash {
         return hash {

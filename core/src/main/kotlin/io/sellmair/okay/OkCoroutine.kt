@@ -3,7 +3,10 @@ package io.sellmair.okay
 import io.sellmair.okay.input.OkInput
 import io.sellmair.okay.input.plus
 import io.sellmair.okay.output.OkOutput
+import io.sellmair.okay.serialization.format
 import kotlinx.coroutines.*
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.serializer
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 
@@ -49,7 +52,7 @@ suspend fun <T> OkContext.memoizedCoroutine(
             @OptIn(OkUnsafe::class)
             storeCacheRecord(
                 OkCacheRecord(
-                    currentOkSessionId(), descriptor, effectiveInput, inputHash, result.dependencies
+                    currentOkSessionId(), descriptor as OkCoroutineDescriptor<Any?>, effectiveInput, inputHash, result.dependencies
                 )
             )
             result.value
@@ -69,6 +72,14 @@ suspend fun <T> OkContext.memoizedCoroutine(
     return coroutine.value.await()
 }
 
+suspend inline fun <reified T> OkContext.cachedCoroutine(
+    descriptor: OkCoroutineDescriptor<T>, input: OkInput, output: OkOutput,
+    noinline body: suspend OkContext.() -> T
+): T = cachedCoroutine(
+    descriptor, input, output, serializer(), body
+)
+
+
 /**
  * Will launch a coroutine which will be shared and then cached.
  * If the computation was already done previously, the returned [OkAsync] will be able to provide
@@ -83,13 +94,15 @@ suspend fun <T> OkContext.memoizedCoroutine(
  *
  */
 suspend fun <T> OkContext.cachedCoroutine(
-    descriptor: OkCoroutineDescriptor<T>, input: OkInput, output: OkOutput, body: suspend OkContext.() -> T
+    descriptor: OkCoroutineDescriptor<T>, input: OkInput, output: OkOutput,
+    serializer: KSerializer<T>,
+    body: suspend OkContext.() -> T
 ): T {
     val effectiveInput = descriptor + input
     /* How to bind dependencies from the 'cached' coroutine? */
     /* The async value from okCoroutineCache should return the dependency key to bind to! */
     val coroutine = cs.coroutineContext.okCoroutineCache.getOrPut(effectiveInput) {
-        restoreOrLaunchTask(descriptor, effectiveInput, output, body)
+        restoreOrLaunchTask(descriptor, effectiveInput, output, serializer, body)
     }
 
     /* Bind the dependency to the new coroutine */
@@ -106,7 +119,9 @@ suspend fun <T> OkContext.cachedCoroutine(
 }
 
 private fun <T> OkContext.restoreOrLaunchTask(
-    descriptor: OkCoroutineDescriptor<T>, input: OkInput, output: OkOutput, body: suspend OkContext.() -> T
+    descriptor: OkCoroutineDescriptor<T>, input: OkInput, output: OkOutput,
+    serializer: KSerializer<T>,
+    body: suspend OkContext.() -> T
 ): OkCoroutine<T> {
     return launchOkCoroutine(input, cs.coroutineContext.pushOkStack(descriptor) + Job()) { key ->
         val cacheResult = tryRestoreCachedCoroutineUnchecked(key)
@@ -114,8 +129,8 @@ private fun <T> OkContext.restoreOrLaunchTask(
 
         @Suppress("UNCHECKED_CAST")
         when (cacheResult) {
-            is OkCacheHit -> cacheResult.record.outputValue as T
-            is OkCacheMiss -> runCoroutine(key, descriptor, input, output, body)
+            is OkCacheHit -> format.decodeFromByteArray(serializer, cacheResult.record.payload!!)
+            is OkCacheMiss -> runCoroutine(key, descriptor, input, output, serializer, body)
         }
     }
 }
@@ -123,8 +138,8 @@ private fun <T> OkContext.restoreOrLaunchTask(
 private suspend fun <T> OkContext.runCoroutine(
     inputHash: OkHash,
     descriptor: OkCoroutineDescriptor<T>,
-    input: OkInput,
-    output: OkOutput,
+    input: OkInput, output: OkOutput,
+    serializer: KSerializer<T>,
     body: suspend OkContext.() -> T
 ): T {
     val resultWithDependencies = withOkCoroutineDependencies {
@@ -137,6 +152,7 @@ private suspend fun <T> OkContext.runCoroutine(
         inputHash = inputHash,
         output = output,
         outputValue = resultWithDependencies.value,
+        serializer = serializer,
         dependencies = resultWithDependencies.dependencies
     )
 

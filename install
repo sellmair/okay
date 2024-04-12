@@ -2,5 +2,5 @@
 ./gradlew install
 
 echo "Installing 'okay' command in '/usr/local/bin'"
-sudo cp src/main/sh/okay.sh /usr/local/bin/okay
+sudo cp core/src/main/sh/okay.sh /usr/local/bin/okay
 sudo chmod +x /usr/local/bin/okay

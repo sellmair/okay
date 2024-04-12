@@ -6,7 +6,7 @@ import java.nio.file.Path
 import kotlin.io.path.Path
 import kotlin.io.path.extension
 
-
+@kotlinx.serialization.Serializable
 class OkPath @OkUnsafe constructor(
     private val root: String,
     @property:OkUnsafe
@@ -52,6 +52,5 @@ class OkPath @OkUnsafe constructor(
         result = 31 * result + value.hashCode()
         return result
     }
-
 }
 

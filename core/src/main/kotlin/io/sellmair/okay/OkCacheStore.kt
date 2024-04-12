@@ -6,7 +6,13 @@ import io.sellmair.okay.output.OkOutput
 import io.sellmair.okay.output.OkOutputDirectory
 import io.sellmair.okay.output.OkOutputFile
 import io.sellmair.okay.output.OkOutputs
+import io.sellmair.okay.serialization.format
 import kotlinx.coroutines.Dispatchers
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializer
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.encodeToStream
 import java.nio.file.FileAlreadyExistsException
 import java.nio.file.Path
 import kotlin.io.path.*
@@ -28,8 +34,9 @@ suspend fun <T> OkContext.storeCachedCoroutine(
     inputHash: OkHash,
     output: OkOutput,
     outputValue: T,
+    serializer: KSerializer<T>,
     dependencies: Set<OkHash>
-): OkCacheRecord<T> = withOkContext(Dispatchers.IO) {
+): OkCacheRecord = withOkContext(Dispatchers.IO) {
     cacheBlobsDirectory.system().createDirectories()
 
     val outputFiles = output.walkFiles()
@@ -50,15 +57,14 @@ suspend fun <T> OkContext.storeCachedCoroutine(
         }
         .toMap()
 
-
     val entry = OkCacheRecord(
         session = currentOkSessionId(),
-        descriptor = descriptor,
+        descriptor = descriptor as OkCoroutineDescriptor<Any?>,
         input = input,
         inputHash = inputHash,
         output = output,
         outputHash = output.currentHash(ctx),
-        outputValue = outputValue,
+        payload = format.encodeToByteArray(serializer, outputValue),
         outputFiles = outputFiles,
         dependencies = dependencies.toSet(),
     )

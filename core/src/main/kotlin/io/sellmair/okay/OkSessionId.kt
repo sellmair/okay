@@ -4,11 +4,12 @@ import java.io.Serializable
 import java.util.UUID
 import kotlin.coroutines.CoroutineContext
 
-class OkSessionId private constructor(private val value: UUID) : Serializable, CoroutineContext.Element {
+@kotlinx.serialization.Serializable
+class OkSessionId private constructor(private val value: String) : Serializable, CoroutineContext.Element {
     override val key get() = Key
 
     companion object Key : CoroutineContext.Key<OkSessionId> {
-        fun random() = OkSessionId(UUID.randomUUID())
+        fun random() = OkSessionId(UUID.randomUUID().toString())
     }
 
     override fun toString(): String {

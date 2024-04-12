@@ -4,6 +4,7 @@ package io.sellmair.okay.kotlin
 
 import io.sellmair.okay.*
 import io.sellmair.okay.OkCoroutineDescriptor.Verbosity.Info
+import io.sellmair.okay.input.OkInput
 import io.sellmair.okay.input.OkInputs
 import io.sellmair.okay.input.asInput
 import io.sellmair.okay.input.plus
@@ -12,9 +13,11 @@ import io.sellmair.okay.io.OkPath
 import io.sellmair.okay.io.walk
 import io.sellmair.okay.io.withExtension
 import io.sellmair.okay.maven.mavenResolveCompileDependencies
+import io.sellmair.okay.output.OkOutput
 import io.sellmair.okay.output.OkOutputDirectory
 import io.sellmair.okay.output.OkOutputs
 import io.sellmair.okay.utils.log
+import kotlinx.serialization.serializer
 import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
 import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
 import org.jetbrains.kotlin.compilerRunner.toArgumentStrings
@@ -39,11 +42,13 @@ suspend fun OkContext.kotlinCompile(
     dependencies: List<OkPath>,
     outputDirectory: OkPath
 ): OkPath {
+
     return cachedCoroutine(
         describeCoroutine("kotlinCompile", verbosity = Info),
         input = sources.asInput() +
             dependencies.map { it.asInput() }.asInput(),
-        output = OkOutputDirectory(outputDirectory)
+        output = OkOutputDirectory(outputDirectory),
+        serializer = OkPath.serializer()
     ) {
         log("Compiling Kotlin")
 
