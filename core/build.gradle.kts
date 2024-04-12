@@ -1,9 +1,8 @@
 import kotlin.io.path.Path
 
 plugins {
-    //kotlin("jvm") version "2.0.0-Beta5"
-    kotlin("jvm") version "1.9.23"
-    kotlin("plugin.serialization") version "1.9.23"
+    kotlin("jvm")
+    kotlin("plugin.serialization")
 }
 
 kotlin {
@@ -55,6 +54,8 @@ tasks.register<JavaExec>("buildTestProject") {
 }
 
 dependencies {
+    implementation(project(":okay-fs"))
+
     implementation("io.ktor:ktor-client-cio:2.3.9")
     implementation("io.ktor:ktor-client-core:2.3.9")
     implementation("org.apache.maven:maven-model:3.9.6")
