@@ -1,7 +1,11 @@
 package io.sellmair.okay
 
+import io.sellmair.okay.serialization.format
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.decodeFromByteArray
+import kotlinx.serialization.encodeToByteArray
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 import java.nio.file.Path
@@ -32,11 +36,12 @@ internal val OkContext.cacheBlobsDirectory
  * @param key obtained by [OkInput.state]
  * @return the cache record associated with the given input key or `null` if no such record is available
  */
-internal suspend fun OkContext.readCacheRecord(key: OkHash): OkCacheRecord<*>? = withOkContext(okCacheDispatcher) {
+@OptIn(ExperimentalSerializationApi::class)
+internal suspend fun OkContext.readCacheRecord(key: OkHash): OkCacheRecord? = withOkContext(okCacheDispatcher) {
     val file = cacheEntriesDirectory.resolve(key.value)
     if (!file.system().isRegularFile()) return@withOkContext null
     ObjectInputStream(file.system().inputStream()).use { stream ->
-        stream.readObject() as? OkCacheRecord<*>
+        format.decodeFromByteArray<OkCacheRecord>(stream.readAllBytes())
     }/*
         We should not read entries that have been written during this exact session.
         Otherwise, the UP-TO-DATE checks have a problem:
@@ -44,19 +49,20 @@ internal suspend fun OkContext.readCacheRecord(key: OkHash): OkCacheRecord<*>? =
         but it might not be UP-TO-DATE from the perspective of the previously stored
         coroutine as the dependencies (or outputs) might have changed.
         */
-        .takeUnless { it?.session == currentOkSessionId() }
+        .takeUnless { it.session == currentOkSessionId() }
 }
 
 /**
  * ⚠️Only stores the cache record!!! Consider using [storeCachedCoroutine] instead?
  */
+@OptIn(ExperimentalSerializationApi::class)
 @OkUnsafe("Consider using ")
-internal suspend fun OkContext.storeCacheRecord(value: OkCacheRecord<*>): Path = withOkContext(okCacheDispatcher) {
+internal suspend fun OkContext.storeCacheRecord(value: OkCacheRecord): Path = withOkContext(okCacheDispatcher) {
     cacheEntriesDirectory.system().createDirectories()
 
     val file = cacheEntriesDirectory.resolve(value.inputHash.value).system()
     ObjectOutputStream(file.outputStream().buffered()).use { stream ->
-        stream.writeObject(value)
+        stream.write(format.encodeToByteArray(value))
     }
 
     file

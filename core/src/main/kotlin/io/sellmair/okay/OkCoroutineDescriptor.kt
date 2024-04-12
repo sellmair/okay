@@ -2,16 +2,17 @@ package io.sellmair.okay
 
 import io.sellmair.okay.input.OkInput
 import io.sellmair.okay.io.OkPath
-import java.io.Serializable
+import kotlinx.serialization.Serializable
 import kotlin.reflect.typeOf
 
+@Serializable
 data class OkCoroutineDescriptor<T>(
     val id: String,
     val title: String,
     val module: OkPath,
     val verbosity: Verbosity,
     val signatureOfT: String
-) : Serializable, OkInput {
+): OkInput {
     enum class Verbosity {
         Silent, Debug, Info
     }

@@ -10,9 +10,9 @@ import kotlin.io.path.*
 internal sealed class OkCacheResult
 
 internal data class OkCacheHit(
-    val record: OkCacheRecord<*>,
-    val upToDate: List<OkCacheRecord<*>> = emptyList(),
-    val restored: List<OkCacheRecord<*>> = emptyList()
+    val record: OkCacheRecord,
+    val upToDate: List<OkCacheRecord> = emptyList(),
+    val restored: List<OkCacheRecord> = emptyList()
 ) : OkCacheResult() {
     override fun toString(): String {
         return "CacheHit(" +
@@ -23,7 +23,7 @@ internal data class OkCacheHit(
 
 internal data class OkCacheMiss(
     val missing: List<OkHash> = emptyList(),
-    val dirty: List<OkCacheRecord<*>> = emptyList()
+    val dirty: List<OkCacheRecord> = emptyList()
 ) : OkCacheResult()
 
 /**
@@ -58,7 +58,7 @@ private suspend fun OkContext.tryRestoreCachedCoroutineChecked(cacheKey: OkHash)
 }
 
 private suspend fun OkContext.tryRestoreCacheRecord(
-    record: OkCacheRecord<*>
+    record: OkCacheRecord
 ): OkCacheResult {
     /* Launch & await restore of dependencies */
     val dependencyResult = record.dependencies.fold<_, OkCacheResult>(OkCacheHit(record)) { result, dependencyKey ->
@@ -89,7 +89,7 @@ private suspend fun OkContext.tryRestoreCacheRecord(
 }
 
 private fun OkContext.restoreFilesFromCache(
-    entry: OkCacheRecord<*>
+    entry: OkCacheRecord
 ) {
     entry.output.withClosure { output -> if (output is OkOutputs) output.values else emptyList() }
         .filterIsInstance<OkOutputDirectory>()

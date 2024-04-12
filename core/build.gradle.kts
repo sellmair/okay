@@ -2,7 +2,8 @@ import kotlin.io.path.Path
 
 plugins {
     //kotlin("jvm") version "2.0.0-Beta5"
-    kotlin("jvm") version "1.9.21"
+    kotlin("jvm") version "1.9.23"
+    kotlin("plugin.serialization") version "1.9.23"
 }
 
 kotlin {
@@ -60,6 +61,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-compiler-embeddable:1.9.23")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.6.3")
     implementation("org.slf4j:slf4j-api:2.0.12")
     implementation("org.slf4j:slf4j-jdk14:2.0.12")
     implementation("io.ktor:ktor-client-cio-jvm:2.3.9")

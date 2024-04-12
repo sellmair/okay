@@ -1,7 +1,6 @@
 package io.sellmair.okay
 
 import io.sellmair.okay.io.OkPath
-import java.io.Serializable
 import java.security.MessageDigest
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
@@ -11,12 +10,13 @@ fun OkHash(hash: ByteArray): OkHash {
     return OkHash(Base64.UrlSafe.encode(hash))
 }
 
-data class OkHash(val value: String) : Serializable {
-
+@kotlinx.serialization.Serializable
+data class OkHash(val value: String)  {
     override fun toString(): String {
         return value.take(6)
     }
 }
+
 
 fun HashBuilder(): HashBuilder = HashBuilderImpl()
 

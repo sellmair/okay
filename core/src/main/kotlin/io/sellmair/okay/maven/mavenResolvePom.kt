@@ -14,12 +14,13 @@ import io.sellmair.okay.utils.log
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader
 import java.io.Serializable
 
+@kotlinx.serialization.Serializable
 data class MavenPom(
     val packaging: String?,
     val dependencies: List<MavenDependency>
 ) : Serializable {
 
-
+    @kotlinx.serialization.Serializable
     data class MavenDependency(
         val coordinates: MavenCoordinates,
         val scope: Scope
