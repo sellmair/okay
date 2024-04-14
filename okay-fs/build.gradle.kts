@@ -13,12 +13,12 @@ kotlin {
     macosArm64()
     linuxArm64()
     linuxX64()
-    
+
     sourceSets.commonMain.dependencies {
-        implementation("com.squareup.okio:okio:3.9.0")
+        api("com.squareup.okio:okio:3.9.0")
         implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.3")
     }
-    
+
     sourceSets.commonTest.dependencies {
         implementation(kotlin("test"))
         implementation("com.squareup.okio:okio-fakefilesystem:3.9.0")
@@ -34,6 +34,6 @@ tasks.withType<KotlinNativeTest>().configureEach {
         this.showStackTraces = true
         this.exceptionFormat = TestExceptionFormat.FULL
     }
-    
- 
+
+
 }

@@ -1,6 +1,8 @@
 package io.sellmair.okay.dependency
 
 import io.sellmair.okay.*
+import io.sellmair.okay.fs.isRegularFile
+import io.sellmair.okay.fs.readText
 import io.sellmair.okay.input.asInput
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
@@ -15,11 +17,9 @@ suspend fun OkContext.parseDependenciesFile(): OkDependenciesFile? {
         describeCoroutine("parseLibsFile"),
         input = dependenciesFile.asInput()
     ) task@{
-        val file = dependenciesFile.system()
-        if (!file.exists()) return@task null
-        val parsedObject = file.inputStream().buffered().use { inputStream ->
-            Json.decodeFromStream<JsonElement>(inputStream)
-        }.jsonObject
+        if (!dependenciesFile.isRegularFile()) return@task null
+        val parsedObject =Json.decodeFromString<JsonElement>(dependenciesFile.readText())
+        .jsonObject
 
         val declarations = parsedObject.keys.map { dependencyKey ->
             OkDependencyDeclaration(

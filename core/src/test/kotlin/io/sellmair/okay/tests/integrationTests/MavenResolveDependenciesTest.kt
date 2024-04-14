@@ -4,6 +4,7 @@ package io.sellmair.okay.tests.integrationTests
 
 import io.sellmair.okay.OkRoot
 import io.sellmair.okay.async
+import io.sellmair.okay.fs.isRegularFile
 import io.sellmair.okay.io.walk
 import io.sellmair.okay.maven.mavenResolveCompileDependencies
 import io.sellmair.okay.maven.mavenResolveRuntimeDependencies
@@ -44,7 +45,7 @@ class MavenResolveDependenciesTest {
         runOkTest(OkRoot(projectDir)) {
             mavenResolveCompileDependencies()
             val expectedCoroutinesJar = path(".okay/libs/maven/org.jetbrains.kotlinx-kotlinx-coroutines-core-1.7.3.jar")
-            if (!expectedCoroutinesJar.system().exists()) {
+            if (!expectedCoroutinesJar.isRegularFile()) {
                 val actualLibraries = path(".okay/libs/maven").walk().resolve(ctx).joinToString("\n")
                 fail("Missing 'kotlinx-coroutines-core-jvm.jar'. Found:\n$actualLibraries")
             }

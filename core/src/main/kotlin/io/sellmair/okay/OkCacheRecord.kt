@@ -1,7 +1,7 @@
 package io.sellmair.okay
 
+import io.sellmair.okay.fs.OkPath
 import io.sellmair.okay.input.OkInput
-import io.sellmair.okay.io.OkPath
 import io.sellmair.okay.output.OkOutput
 import io.sellmair.okay.serialization.Base64Serializer
 import kotlinx.serialization.Contextual

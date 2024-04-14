@@ -4,11 +4,11 @@ import io.sellmair.okay.*
 import io.sellmair.okay.OkCoroutineDescriptor.Verbosity.Info
 import io.sellmair.okay.dependency.moduleOrNull
 import io.sellmair.okay.dependency.runtimeDependenciesClosure
+import io.sellmair.okay.fs.*
 import io.sellmair.okay.input.OkInput
 import io.sellmair.okay.input.OkInputFile
 import io.sellmair.okay.input.OkInputProperty
 import io.sellmair.okay.input.OkInputs
-import io.sellmair.okay.io.OkPath
 import io.sellmair.okay.io.copyFile
 import io.sellmair.okay.maven.mavenResolveRuntimeDependencies
 import io.sellmair.okay.output.OkOutput
@@ -33,7 +33,7 @@ suspend fun OkContext.kotlinPackage(): OkPath {
 
         val classPath = async {
             (mavenRuntimeDependencies.await() + moduleDependencies.await()).map { path ->
-                path.system().relativeTo(packageDir.system())
+                path.relativeTo(packageDir)
             }.joinToString(" ")
         }
 
@@ -48,7 +48,7 @@ suspend fun OkContext.kotlinPackage(): OkPath {
             )
         )
 
-        copyFile(jarFile, packageDir.resolve(jarFile.system().name))
+        copyFile(jarFile, packageDir.resolve(jarFile.name))
         log("Packaged Application in '$ansiGreen$packageDir$ansiReset'")
         packageDir
     }
@@ -66,8 +66,8 @@ suspend fun OkContext.packageModuleDependencies(packageDir: OkPath): List<OkPath
     return dependencyModuleJars.map { dependencyModuleJar ->
         async {
             val fromFile = dependencyModuleJar.await()
-            val targetFile = packageDir.resolve("libs").resolve(fromFile.system().name)
-            targetFile.system().createParentDirectories()
+            val targetFile = packageDir.resolve("libs").resolve(fromFile.name)
+            targetFile.createParentDirectories()
             copyFile(fromFile, targetFile)
         }
     }.awaitAll()
@@ -77,8 +77,8 @@ suspend fun OkContext.packageModuleDependencies(packageDir: OkPath): List<OkPath
 suspend fun OkContext.packageMavenRuntimeDependencies(packageDir: OkPath): List<OkPath> {
     val runtimeDependencies = mavenResolveRuntimeDependencies()
     val destinationFiles = runtimeDependencies.map { file ->
-        packageDir.system().resolve("libs/${file.system().name}")
-    }.map { it.ok() }
+        packageDir.resolve("libs/${file.name}")
+    }
 
     return cachedCoroutine(
         describeCoroutine("copyMavenRuntimeDependencies"),
@@ -86,9 +86,9 @@ suspend fun OkContext.packageMavenRuntimeDependencies(packageDir: OkPath): List<
         output = OkOutput.none(),
     ) {
         runtimeDependencies.forEach { file ->
-            val targetFile = packageDir.system().resolve("libs/${file.system().name}")
+            val targetFile = packageDir.resolve("libs/${file.name}")
             targetFile.createParentDirectories()
-            file.system().copyTo(targetFile, true)
+            file.copyTo(targetFile)
         }
 
         destinationFiles
@@ -109,14 +109,9 @@ suspend fun OkContext.packageStartScript(packageDir: OkPath): OkPath {
         input = OkInputProperty("scriptContent", scriptContent),
         output = OkOutputFile(scriptFile)
     ) {
-        scriptFile.system().createParentDirectories()
-        scriptFile.system().writeText(scriptContent)
-
-        runCatching {
-            scriptFile.system().setPosixFilePermissions(
-                scriptFile.system().getPosixFilePermissions() + PosixFilePermission.OWNER_EXECUTE
-            )
-        }
+        scriptFile.createParentDirectories()
+        scriptFile.writeText(scriptContent)
+        scriptFile.setIsExecutable(true)
 
         scriptFile
     }

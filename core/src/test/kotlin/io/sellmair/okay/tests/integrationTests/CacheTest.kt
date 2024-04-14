@@ -66,6 +66,7 @@ class CacheTest {
             assertCacheUpToDate(rootPath(), "kotlinCompile")
         }
 
+        println("Deleted 'new.kt'")
         newFile.deleteIfExists()
         runOkTest(OkRoot(tempDir)) {
             kotlinCompile()

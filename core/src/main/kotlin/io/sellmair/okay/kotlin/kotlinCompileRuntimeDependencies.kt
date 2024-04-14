@@ -5,7 +5,7 @@ import io.sellmair.okay.async
 import io.sellmair.okay.awaitAll
 import io.sellmair.okay.dependency.moduleOrNull
 import io.sellmair.okay.dependency.runtimeDependenciesClosure
-import io.sellmair.okay.io.OkPath
+import io.sellmair.okay.fs.OkPath
 import io.sellmair.okay.withOkModule
 
 suspend fun OkContext.kotlinCompileRuntimeDependencies(): List<OkPath> {

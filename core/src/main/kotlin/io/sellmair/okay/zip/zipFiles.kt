@@ -1,10 +1,10 @@
 package io.sellmair.okay.zip
 
 import io.sellmair.okay.*
+import io.sellmair.okay.fs.*
 import io.sellmair.okay.input.OkInputFile
 import io.sellmair.okay.input.asInput
 import io.sellmair.okay.input.plus
-import io.sellmair.okay.io.OkPath
 import io.sellmair.okay.output.OkOutputFile
 import java.nio.file.Files
 import java.util.zip.ZipEntry
@@ -37,14 +37,17 @@ suspend fun OkContext.zipFiles(
         input = files.values.map { OkInputFile(it) }.asInput() + layoutInputHash.asInput(),
         output = OkOutputFile(zipFile)
     ) {
-        zipFile.system().createParentDirectories()
-        ZipOutputStream(zipFile.system().outputStream().buffered()).use { out ->
+        zipFile.createParentDirectories()
+
+        ZipOutputStream(zipFile.sink().outputStream().buffered()).use { out ->
             files.forEach { (name, file) ->
-                val sanitizedName = if (file.system().isDirectory() && !name.endsWith("/")) name + "/"
+                val sanitizedName = if (file.isDirectory() && !name.endsWith("/")) name + "/"
                 else name
 
                 out.putNextEntry(ZipEntry(sanitizedName))
-                Files.copy(file.system(), out)
+                if (file.isRegularFile()) {
+                    file.source { source -> source.inputStream().copyTo(out) }
+                }
                 out.closeEntry()
             }
 

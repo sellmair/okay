@@ -1,10 +1,13 @@
 package io.sellmair.okay.io
 
-import io.sellmair.okay.*
+import io.sellmair.okay.OkContext
+import io.sellmair.okay.cachedCoroutine
+import io.sellmair.okay.describeCoroutine
+import io.sellmair.okay.fs.OkPath
+import io.sellmair.okay.fs.copyTo
 import io.sellmair.okay.input.asInput
 import io.sellmair.okay.output.asOutput
 import kotlinx.serialization.serializer
-import kotlin.io.path.copyTo
 
 suspend fun OkContext.copyFile(from: OkPath, to: OkPath): OkPath {
     return cachedCoroutine(
@@ -13,6 +16,6 @@ suspend fun OkContext.copyFile(from: OkPath, to: OkPath): OkPath {
         output = to.asOutput(),
         serializer = serializer()
     ) {
-        from.system().copyTo(to.system(), true).ok()
+        from.copyTo(to)
     }
 }

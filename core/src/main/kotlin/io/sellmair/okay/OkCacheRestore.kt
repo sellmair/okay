@@ -2,6 +2,10 @@
 
 package io.sellmair.okay
 
+import io.sellmair.okay.fs.copyTo
+import io.sellmair.okay.fs.createParentDirectories
+import io.sellmair.okay.fs.deleteRecursively
+import io.sellmair.okay.fs.isRegularFile
 import io.sellmair.okay.output.OkOutputDirectory
 import io.sellmair.okay.output.OkOutputs
 import io.sellmair.okay.utils.*
@@ -16,8 +20,8 @@ internal data class OkCacheHit(
 ) : OkCacheResult() {
     override fun toString(): String {
         return "CacheHit(" +
-            "upToDate=${upToDate.joinToString { it.descriptor.id }}, " +
-            "restored=${restored.joinToString { it.descriptor.id }})"
+                "upToDate=${upToDate.joinToString { it.descriptor.id }}, " +
+                "restored=${restored.joinToString { it.descriptor.id }})"
     }
 }
 
@@ -93,13 +97,13 @@ private fun OkContext.restoreFilesFromCache(
 ) {
     entry.output.withClosure { output -> if (output is OkOutputs) output.values else emptyList() }
         .filterIsInstance<OkOutputDirectory>()
-        .forEach { outputDirectory -> outputDirectory.path.system().deleteRecursively() }
+        .forEach { outputDirectory -> outputDirectory.path.deleteRecursively() }
 
     entry.outputFiles.orEmpty().forEach { (path, hash) ->
-        val blob = cacheBlobsDirectory.resolve(hash.value).system()
+        val blob = cacheBlobsDirectory.resolve(hash.value)
         if (blob.isRegularFile()) {
-            path.system().createParentDirectories()
-            blob.copyTo(path.system(), true)
+            path.createParentDirectories()
+            blob.copyTo(path)
         }
     }
 }
