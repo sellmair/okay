@@ -2,17 +2,18 @@ package io.sellmair.okay.kotlin
 
 import io.sellmair.okay.*
 import io.sellmair.okay.OkCoroutineDescriptor.Verbosity.Info
+import io.sellmair.okay.fs.absolutePathString
+import io.sellmair.okay.fs.isRegularFile
+import io.sellmair.okay.fs.readText
 import io.sellmair.okay.input.OkInputFile
 import io.sellmair.okay.maven.mavenResolveRuntimeDependencies
 import io.sellmair.okay.utils.log
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
-import org.jetbrains.kotlin.konan.file.use
 import java.net.URLClassLoader
 import java.util.*
 import kotlin.concurrent.thread
-import kotlin.io.path.exists
-import kotlin.io.path.inputStream
+import kotlin.io.path.Path
 
 
 suspend fun OkContext.kotlinRun(target: String? = null, arguments: List<String> = emptyList()): Thread = withOkStack(
@@ -28,9 +29,9 @@ suspend fun OkContext.kotlinRun(target: String? = null, arguments: List<String> 
 
 
     val loader = URLClassLoader.newInstance(
-        mavenDependencies.await().map { it.system().toUri().toURL() }.toTypedArray() +
-                moduleDependencies.await().map { it.system().toUri().toURL() } +
-                compiled.await().system().toUri().toURL()
+        mavenDependencies.await().map { Path(it.absolutePathString()).toUri().toURL() }.toTypedArray() +
+                moduleDependencies.await().map { Path(it.absolutePathString()).toUri().toURL() } +
+                Path(compiled.await().absolutePathString()).toUri().toURL()
     )
 
     log("run: $className.$functionName()")
@@ -77,13 +78,12 @@ internal suspend fun OkContext.parseKotlinRunOptions(target: String? = null): Ko
         describeCoroutine("parseKotlinRunOptions"),
         input = OkInputFile(runConfigurationFile)
     ) coroutine@{
-        if (!runConfigurationFile.system().exists()) {
+        if (!runConfigurationFile.isRegularFile()) {
             return@coroutine null
         }
 
-        val parsed = runConfigurationFile.system().inputStream().buffered().use { inputStream ->
-            Json.decodeFromStream<JsonElement>(inputStream)
-        }
+        val parsed = Json.decodeFromString<JsonElement>(runConfigurationFile.readText())
+
 
         if (target == null && parsed is JsonObject) {
             return@coroutine parsed.toKotlinRunOptions()

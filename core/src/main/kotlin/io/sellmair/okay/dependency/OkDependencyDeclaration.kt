@@ -1,7 +1,7 @@
 package io.sellmair.okay.dependency
 
 import io.sellmair.okay.OkContext
-import io.sellmair.okay.io.OkPath
+import io.sellmair.okay.fs.OkPath
 import io.sellmair.okay.path
 
 data class OkDependencyDeclaration(

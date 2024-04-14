@@ -6,7 +6,9 @@ import io.sellmair.okay.cachedCoroutine
 import io.sellmair.okay.describeRootCoroutine
 import io.sellmair.okay.input.OkInput
 import io.sellmair.okay.input.OkInputString
-import io.sellmair.okay.io.OkPath
+import io.sellmair.okay.fs.OkPath
+import io.sellmair.okay.fs.createParentDirectories
+import io.sellmair.okay.fs.sink
 import io.sellmair.okay.utils.ansiGreen
 import io.sellmair.okay.utils.ansiReset
 import io.sellmair.okay.utils.log
@@ -35,7 +37,7 @@ suspend fun OkContext.mavenResolveDependency(
     ) {
         log("Downloading '$ansiGreen$mavenCoordinates$ansiReset'")
 
-        outputFile.system().createParentDirectories()
+        outputFile.createParentDirectories()
 
         val urlString = buildString {
             append("https://repo1.maven.org/maven2/") // repo
@@ -48,8 +50,8 @@ suspend fun OkContext.mavenResolveDependency(
         mavenResolvePom(mavenCoordinates)
 
         URI.create(urlString).toURL().openStream().use { inputStream ->
-            outputFile.system().outputStream().use { outputStream ->
-                inputStream.copyTo(outputStream)
+            outputFile.sink().outputStream().use { out ->
+                inputStream.copyTo(out)
             }
         }
 

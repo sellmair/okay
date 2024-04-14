@@ -15,7 +15,7 @@ suspend fun log(value: String) {
     val stack = currentCoroutineContext().okStack
     val lastFrame = stack.lastOrNull { it.verbosity >= Verbosity.Info } ?: return
     val title = lastFrame.title
-    val module = lastFrame.module.toString().ifBlank { "<root>" }
+    val module = if (lastFrame.module.parent == null) "<root>" else lastFrame.module.toString()
 
     val logger = currentCoroutineContext()[OkLogger] ?: OkStdLogger
     logger.log(module, title, value)

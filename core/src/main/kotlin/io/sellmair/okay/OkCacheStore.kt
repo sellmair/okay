@@ -1,5 +1,6 @@
 package io.sellmair.okay
 
+import io.sellmair.okay.fs.*
 import io.sellmair.okay.input.OkInput
 import io.sellmair.okay.io.regularFileStateHash
 import io.sellmair.okay.output.OkOutput
@@ -9,13 +10,8 @@ import io.sellmair.okay.output.OkOutputs
 import io.sellmair.okay.serialization.format
 import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializer
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.encodeToStream
 import java.nio.file.FileAlreadyExistsException
-import java.nio.file.Path
-import kotlin.io.path.*
+import kotlin.io.path.ExperimentalPathApi
 
 
 /**
@@ -37,23 +33,22 @@ suspend fun <T> OkContext.storeCachedCoroutine(
     serializer: KSerializer<T>,
     dependencies: Set<OkHash>
 ): OkCacheRecord = withOkContext(Dispatchers.IO) {
-    cacheBlobsDirectory.system().createDirectories()
+    cacheBlobsDirectory.createDirectories()
 
     val outputFiles = output.walkFiles()
         .toList()
         .mapNotNull { path ->
-            if (!path.exists() || !path.isRegularFile()) return@mapNotNull null
+            if (!path.isRegularFile()) return@mapNotNull null
             val fileCacheKey = path.regularFileStateHash()
-            val blobFile = cacheBlobsDirectory.resolve(fileCacheKey.value).system()
+            val blobFile = cacheBlobsDirectory.resolve(fileCacheKey.value)
 
             try {
-                blobFile.createFile()
-                path.copyTo(blobFile, true)
+                path.copyTo(blobFile)
             } catch (t: FileAlreadyExistsException) {
                 /* File exists, no need to store it */
             }
 
-            path.ok() to fileCacheKey
+            path to fileCacheKey
         }
         .toMap()
 
@@ -74,12 +69,12 @@ suspend fun <T> OkContext.storeCachedCoroutine(
 }
 
 @OptIn(ExperimentalPathApi::class)
-fun OkOutput.walkFiles(): Sequence<Path> {
+fun OkOutput.walkFiles(): Sequence<OkPath> {
     return sequence {
         when (this@walkFiles) {
             is OkOutputs -> yieldAll(values.flatMap { it.walkFiles() })
-            is OkOutputDirectory -> yieldAll(path.system().walk())
-            is OkOutputFile -> yield(path.system())
+            is OkOutputDirectory -> yieldAll(path.listRecursively())
+            is OkOutputFile -> yield(path)
         }
     }
 }

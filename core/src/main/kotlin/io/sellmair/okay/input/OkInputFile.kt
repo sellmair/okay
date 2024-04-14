@@ -1,20 +1,20 @@
 package io.sellmair.okay.input
 
-import io.sellmair.okay.*
-import io.sellmair.okay.io.OkPath
+import io.sellmair.okay.OkContext
+import io.sellmair.okay.OkHash
+import io.sellmair.okay.fs.OkPath
+import io.sellmair.okay.fs.isDirectory
 import io.sellmair.okay.io.directoryStateHash
 import io.sellmair.okay.io.regularFileStateHash
 import kotlinx.serialization.Serializable
-import kotlin.io.path.isDirectory
 
 fun OkPath.asInput(): OkInputFile = OkInputFile(this)
 
 @Serializable
 data class OkInputFile(val path: OkPath) : OkInput {
     override suspend fun currentHash(ctx: OkContext): OkHash {
-        val systemPath = path.system()
-        return if (systemPath.isDirectory()) systemPath.directoryStateHash()
-        else systemPath.regularFileStateHash()
+        return if (path.isDirectory()) path.directoryStateHash()
+        else path.regularFileStateHash()
     }
 }
 

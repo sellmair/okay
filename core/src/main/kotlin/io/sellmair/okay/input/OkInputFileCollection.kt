@@ -15,7 +15,7 @@ data class OkInputFileCollection(val files: OkFileCollection) : OkInput {
     override suspend fun currentHash(ctx: OkContext): OkHash {
         return hash {
             files.resolve(ctx).forEach { path ->
-                push(path.system().regularFileStateHash())
+                push(path.regularFileStateHash())
             }
         }
     }

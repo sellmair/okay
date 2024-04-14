@@ -1,7 +1,7 @@
 package io.sellmair.okay
 
 import io.sellmair.okay.input.OkInput
-import io.sellmair.okay.io.OkPath
+import io.sellmair.okay.fs.OkPath
 import kotlinx.serialization.Serializable
 import kotlin.reflect.typeOf
 

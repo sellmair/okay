@@ -47,15 +47,16 @@ tasks.register<Sync>("install") {
 
 tasks.register<JavaExec>("buildTestProject") {
     dependsOn("install")
-    workingDir = file("testProject")
+    workingDir = rootDir.resolve("samples/ktorServer")
     classpath = kotlin.target.compilations["main"].runtimeDependencyFiles
-    args = listOf("build")
+    args = listOf("pkg")
     mainClass = "io.sellmair.okay.OkMain"
 }
 
 dependencies {
     implementation(project(":okay-fs"))
 
+    implementation("io.ktor:ktor-client-cio-jvm:2.3.9")
     implementation("io.ktor:ktor-client-cio:2.3.9")
     implementation("io.ktor:ktor-client-core:2.3.9")
     implementation("org.apache.maven:maven-model:3.9.6")
@@ -65,7 +66,6 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.6.3")
     implementation("org.slf4j:slf4j-api:2.0.12")
     implementation("org.slf4j:slf4j-jdk14:2.0.12")
-    implementation("io.ktor:ktor-client-cio-jvm:2.3.9")
 
     testImplementation(kotlin("test-junit5"))
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")

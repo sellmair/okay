@@ -5,7 +5,7 @@ import io.sellmair.okay.OkCoroutineDescriptor.Verbosity.Info
 import io.sellmair.okay.dependency.compileDependenciesClosure
 import io.sellmair.okay.dependency.runtimeDependenciesClosure
 import io.sellmair.okay.input.OkInput
-import io.sellmair.okay.io.OkPath
+import io.sellmair.okay.fs.OkPath
 import io.sellmair.okay.output.OkOutput
 
 

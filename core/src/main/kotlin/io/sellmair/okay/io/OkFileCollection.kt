@@ -3,10 +3,11 @@
 package io.sellmair.okay.io
 
 import io.sellmair.okay.OkContext
+import io.sellmair.okay.fs.OkPath
+import io.sellmair.okay.fs.isRegularFile
+import io.sellmair.okay.fs.listRecursively
 import java.io.Serializable
-import kotlin.io.path.ExperimentalPathApi
-import kotlin.io.path.isRegularFile
-import kotlin.io.path.walk
+import kotlin.io.path.*
 
 /**
  * Represents a collection of regular/existing files
@@ -25,14 +26,12 @@ fun OkFileCollection.withExtension(extension: String): OkFileCollection {
 }
 
 @kotlinx.serialization.Serializable
-@OptIn(ExperimentalPathApi::class)
 internal data class OkWalkFileCollection(
     private val root: OkPath
 ) : OkFileCollection, Serializable {
     override suspend fun resolve(ctx: OkContext): List<OkPath> = with(ctx) {
-        root.system().walk()
+        root.listRecursively()
             .filter { it.isRegularFile() }
-            .map { it.ok() }
             .toList()
     }
 }

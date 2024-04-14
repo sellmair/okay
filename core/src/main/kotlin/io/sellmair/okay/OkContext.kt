@@ -3,8 +3,10 @@
 
 package io.sellmair.okay
 
-import io.sellmair.okay.io.OkPath
+import io.sellmair.okay.fs.OkPath
+import io.sellmair.okay.fs.absolutePathString
 import kotlinx.coroutines.*
+import okio.Path.Companion.toPath
 import java.nio.file.Path
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
@@ -29,8 +31,6 @@ interface OkContext {
     val cs: CoroutineScope
 
     val ctx: OkContext get() = this
-
-    fun Path.ok(): OkPath = path(this)
 }
 
 internal operator fun OkContext.plus(element: CoroutineContext.Element): OkContext {

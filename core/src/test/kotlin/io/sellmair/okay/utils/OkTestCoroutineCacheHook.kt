@@ -4,7 +4,7 @@ import io.sellmair.okay.*
 import io.sellmair.okay.OkCacheMiss
 import io.sellmair.okay.OkCacheResult
 import io.sellmair.okay.OkCoroutineCacheHook
-import io.sellmair.okay.io.OkPath
+import io.sellmair.okay.fs.OkPath
 import kotlinx.coroutines.currentCoroutineContext
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock

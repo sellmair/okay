@@ -1,7 +1,8 @@
 package io.sellmair.okay
 
-import io.sellmair.okay.io.OkPath
-import java.security.MessageDigest
+import io.sellmair.okay.fs.OkPath
+import okio.*
+import okio.HashingSink.Companion.sha256
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
@@ -11,7 +12,7 @@ fun OkHash(hash: ByteArray): OkHash {
 }
 
 @kotlinx.serialization.Serializable
-data class OkHash(val value: String)  {
+data class OkHash(val value: String) {
     override fun toString(): String {
         return value.take(6)
     }
@@ -22,19 +23,26 @@ fun HashBuilder(): HashBuilder = HashBuilderImpl()
 
 interface HashBuilder {
     fun push(value: String)
+
     fun push(value: ByteArray)
+
     fun push(value: ByteArray, offset: Int, length: Int)
+
     fun push(value: Boolean)
+
     fun push(value: Byte)
+
     fun push(value: OkHash)
+
     fun push(value: OkPath)
+
+    fun push(value: Source)
+
     fun build(): OkHash
 }
 
 fun hash(value: ByteArray): OkHash {
-    val sha265 = MessageDigest.getInstance("SHA-256")
-    sha265.update(value)
-    return OkHash(sha265.digest())
+    return hash { push(value) }
 }
 
 fun hash(value: String): OkHash {
@@ -53,39 +61,50 @@ fun Iterable<OkHash>.hash(): OkHash = hash {
     forEach { value -> push(value) }
 }
 
-class HashBuilderImpl(
-    private val messageDigest: MessageDigest = MessageDigest.getInstance("SHA-256")
-) : HashBuilder {
+class HashBuilderImpl : HashBuilder {
+
+    private val hashingSink = sha256(blackholeSink())
+
+    private val buffer = sha256(hashingSink).buffer()
 
     override fun push(value: String) {
-        messageDigest.update(value.encodeToByteArray())
+        buffer.writeUtf8(value)
     }
 
     override fun push(value: ByteArray) {
-        messageDigest.update(value)
+        buffer.write(value)
     }
 
     override fun push(value: ByteArray, offset: Int, length: Int) {
-        messageDigest.update(value, offset, length)
+        buffer.write(value, offset, length)
     }
 
     override fun push(value: Boolean) {
-        messageDigest.update(if (value) 1 else 0)
+        buffer.writeByte(if (value) 1 else 0)
     }
 
     override fun push(value: Byte) {
-        messageDigest.update(value)
+        buffer.writeByte(value.toInt())
     }
 
     override fun push(value: OkHash) {
-        push(value.value)
+        buffer.writeUtf8(value.value)
     }
 
     override fun push(value: OkPath) {
         push(value.toString())
     }
 
+    override fun push(value: Source) {
+        try {
+            buffer.writeAll(value)
+        } finally {
+            value.close()
+        }
+    }
+
     override fun build(): OkHash {
-        return OkHash(messageDigest.digest())
+        buffer.close()
+        return OkHash(hashingSink.hash.base64Url())
     }
 }
