@@ -1,8 +1,10 @@
 package io.sellmair.okay
 
 import io.sellmair.okay.fs.OkPath
-import okio.*
 import okio.HashingSink.Companion.sha256
+import okio.Source
+import okio.blackholeSink
+import okio.buffer
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
