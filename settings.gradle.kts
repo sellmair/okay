@@ -1,6 +1,6 @@
 rootProject.name = "okay"
 
-include(":core")
+include(":okay-core")
 include(":okay-fs")
 
 dependencyResolutionManagement {
