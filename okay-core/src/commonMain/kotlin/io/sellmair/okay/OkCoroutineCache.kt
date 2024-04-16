@@ -1,0 +1,24 @@
+package io.sellmair.okay
+
+import io.sellmair.okay.input.OkInput
+import kotlinx.atomicfu.locks.reentrantLock
+import kotlinx.atomicfu.locks.withLock
+import kotlin.coroutines.CoroutineContext
+
+internal val CoroutineContext.okCoroutineCache: OkCoroutineCache
+    get() = this[OkCoroutineCache] ?: error("Missing 'OkCoroutineCache'")
+
+internal class OkCoroutineCache : CoroutineContext.Element {
+    private val lock = reentrantLock()
+    private val values = HashMap<OkInput, OkCoroutine<*>>()
+    override val key: CoroutineContext.Key<*> = Key
+
+    companion object Key : CoroutineContext.Key<OkCoroutineCache>
+
+    fun <T> getOrPut(input: OkInput, create: () -> OkCoroutine<T>): OkCoroutine<T> {
+        @Suppress("UNCHECKED_CAST")
+        return lock.withLock {
+            values.getOrPut(input, create)
+        } as OkCoroutine<T>
+    }
+}
