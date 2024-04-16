@@ -2,7 +2,7 @@
 
 package io.sellmair.okay
 
-import io.sellmair.okay.jvm.OkJvmClient
+import io.sellmair.okay.jvm.OkJvmConnection
 import kotlinx.coroutines.*
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
@@ -11,9 +11,13 @@ fun ok(body: suspend OkContext.() -> Unit) {
     runBlocking(
         Dispatchers.Default + Job() + OkCoroutineStack(emptyList()) + OkCoroutineCache() + OkSessionId.random()
     ) {
-        with(OkContextImpl(this + OkJvmClient())) {
-            body()
+        withContext(OkJvmConnection()) {
+            with(OkContext(this)) {
+                body()
+            }
         }
+
+        coroutineContext.job.cancelChildren()
     }
 }
 

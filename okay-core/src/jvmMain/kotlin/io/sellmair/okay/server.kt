@@ -1,47 +1,63 @@
 package io.sellmair.okay
 
+import io.ktor.network.selector.*
+import io.ktor.network.sockets.*
+import io.ktor.utils.io.*
+import io.ktor.utils.io.core.*
 import io.sellmair.okay.jvm.*
 import io.sellmair.okay.kotlin.executeKotlinCompile
 import io.sellmair.okay.serialization.format
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
-import java.io.DataInputStream
-import java.io.DataOutputStream
 
-fun main(): Unit = runBlocking {
-    val input = DataInputStream(System.`in`)
-    val output = DataOutputStream(System.out)
+@OptIn(ExperimentalCoroutinesApi::class)
 
+fun main(args: Array<String>) {
+    runBlocking(SupervisorJob() + Dispatchers.Default.limitedParallelism(1)) {
+        run(args)
+    }
+}
+
+suspend fun run(args: Array<String>) = coroutineScope {
+    val port = args.first().toInt()
+    val socket = aSocket(SelectorManager(Dispatchers.IO)).tcp().connect(hostname = "127.0.0.1", port = port)
     val responseChannel = Channel<JvmResponsePkg>()
 
-    /* Handle incoming requests */
+    /* Read from socket and dispatch tasks */
     launch(Dispatchers.IO) {
-        while (true) {
-            System.err.println("Reading... ")
-            val size = input.readInt()
+        val readChannel = socket.openReadChannel()
 
-            System.err.println("Pkg size: $size")
-            val requestPkg = format.decodeFromByteArray<JvmRequestPkg>(input.readNBytes(size))
-            System.err.println("Request: $requestPkg")
-            launch(Dispatchers.Default) {
-                responseChannel.send(JvmResponsePkg(requestPkg.requestId, execute(requestPkg.request)))
+        while (isActive) {
+            try {
+                val nextPkgSize = readChannel.readInt()
+                val binary = readChannel.readPacket(nextPkgSize).readBytes()
+                val requestPkg = format.decodeFromByteArray<JvmRequestPkg>(binary)
+
+                launch(Dispatchers.Default) {
+                    val response = execute(requestPkg.request)
+                    responseChannel.send(JvmResponsePkg(requestPkg.requestId, response))
+                }
+            } catch (t: ClosedReceiveChannelException) {
+                this@coroutineScope.coroutineContext.cancelChildren()
             }
         }
     }
 
-    /* Send responses */
+    /* Take responses and send them back to the main process */
     launch(Dispatchers.IO) {
-        responseChannel.consumeEach { response ->
-            System.err.println("Sending $response")
-            val responseBytes = format.encodeToByteArray(response)
-            output.writeInt(responseBytes.size)
-            output.write(responseBytes)
-            output.flush()
+        val writeChannel = socket.openWriteChannel()
+        responseChannel.consumeEach { responsePkg ->
+            val binary = format.encodeToByteArray(responsePkg)
+            writeChannel.writeInt(binary.size)
+            writeChannel.writeFully(binary)
+            writeChannel.flush()
         }
     }
+
 }
 
 internal fun execute(request: JvmRequest): JvmResponse {
